@@ -25,13 +25,20 @@ jobs:
         working-directory: ./slack_bot
   type_checking:
     name: Static type checking
-    runs-on: [self-hosted, small]
+    runs-on: [ self-hosted, small ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+      - name: Install Poetry
+        run: python -m pip install --upgrade poetry==1.5.1
+      - name: Config poetry
+        run: poetry config virtualenvs.create false
+      - name: Install dependencies
+        run: poetry install --only main,dev --no-interaction --no-ansi --no-cache
+        working-directory: ./slack_bot
       - name: Lint
         run: mypy .
         working-directory: ./slack_bot
