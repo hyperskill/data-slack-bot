@@ -97,6 +97,7 @@ jobs:
 
       - name: Deploy
         run: |
+          ls -a
           helm upgrade data-slack-bot ./deploy/slack_bot \
           --namespace default \
           --install \
