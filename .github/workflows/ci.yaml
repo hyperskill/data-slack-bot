@@ -97,6 +97,8 @@ jobs:
 
       - name: Deploy
         run: |
+          echo "SLACK_APP_TOKEN=$(echo "${{ secrets.SLACK_APP_TOKEN }}" | base64)" >> $GITHUB_ENV
+          echo "SLACK_BOT_TOKEN=$(echo "${{ secrets.SLACK_BOT_TOKEN }}" | base64)" >> $GITHUB_ENV
           helm upgrade data-slack-bot ./deploy/slack_bot \
           --namespace data-slack-bot \
           --install \
@@ -104,5 +106,5 @@ jobs:
           --atomic \
           --debug \
           --set image.tag=${{ github.sha }} \
-          --set slack.appToken=${{ secrets.SLACK_APP_TOKEN }} \
-          --set slack.botToken=${{ secrets.SLACK_BOT_TOKEN }}
+          --set slack.appToken=${{ env.SLACK_APP_TOKEN }} \
+          --set slack.botToken=${{ env.SLACK_BOT_TOKEN }}
