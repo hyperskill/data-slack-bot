@@ -97,8 +97,8 @@ jobs:
 
       - name: Prepare deploy
         run: |
-          dockerAuth=$(echo "${{ secrets.AZ_REGISTRY_USERNAME }}:${{ secrets.AZ_REGISTRY_PASSWORD}}" | base64)
-          dockerConfigJson=$(echo "{\"auths\": {\"hyperskill.azurecr.io\": {\"auth\": \"$dockerAuth\"}}}" | base64)
+          dockerAuth=$(echo "${{ secrets.AZ_REGISTRY_USERNAME }}:${{ secrets.AZ_REGISTRY_PASSWORD}}" | base64 -w 0)
+          dockerConfigJson=$(echo "{\"auths\": {\"hyperskill.azurecr.io\": {\"auth\": \"$dockerAuth\"}}}" | base64 -w 0)
           echo "dockerConfigJson=$dockerConfigJson" >> "$GITHUB_ENV"
 
       - name: Deploy
