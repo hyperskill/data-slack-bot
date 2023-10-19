@@ -97,9 +97,8 @@ jobs:
 
       - name: Deploy
         run: |
-          echo "dockerAuth=$(echo "${{ secrets.AZ_REGISTRY_USERNAME }}:${{ secrets.AZ_REGISTRY_PASSWORD}}" | base64)" >> "$GITHUB_ENV"
-          echo "dockerConfigJson=$(echo '{"auths": {"hyperskill.azurecr.io": {"auth": "${{ env.dockerAuth }}"}}}' | base64)" >> "$GITHUB_ENV"
-          echo "${{ env.dockerConfigJson }}"
+          dockerAuth=$(echo "${{ secrets.AZ_REGISTRY_USERNAME }}:${{ secrets.AZ_REGISTRY_PASSWORD}}" | base64)"
+          dockerConfigJson=$(echo '{"auths": {"hyperskill.azurecr.io": {"auth": "$dockerAuth"}}}' | base64)"
           helm upgrade data-slack-bot ./deploy/slack_bot \
           --namespace data-slack-bot \
           --install \
@@ -107,6 +106,6 @@ jobs:
           --atomic \
           --debug \
           --set image.tag=${{ github.sha }} \
-          --set image.dockerConfigJson=${{ env.dockerConfigJson }} \
+          --set image.dockerConfigJson=$dockerConfigJson \
           --set slack.appToken=${{ secrets.SLACK_APP_TOKEN }} \
           --set slack.botToken=${{ secrets.SLACK_BOT_TOKEN }}
