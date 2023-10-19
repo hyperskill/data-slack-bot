@@ -15,15 +15,6 @@ serviceAccount:
   name: build-data-slack-bot
   annotations: []
 
-github:
-  token: secret
-
 slack:
   appToken: secret
   botToken: secret
-
-sentry:
-  dsn: secret
-
-youtrack:
-  token: secret
