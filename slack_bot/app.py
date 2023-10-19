@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
-app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
+app = App(token=SLACK_BOT_TOKEN)
 
 
 # Add functionality here
