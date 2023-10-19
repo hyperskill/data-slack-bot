@@ -1,0 +1,29 @@
+# Default values for slack_bot.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespace: data-slack-bot
+environment: production
+
+image:
+  repository: hyperskill.azurecr.io/hyperskill/dataslackbot
+  tag: undefined
+  dockerConfigJson: secret
+
+serviceAccount:
+  create: true
+  name: build-data-slack-bot
+  annotations: []
+
+github:
+  token: secret
+
+slack:
+  appToken: secret
+  botToken: secret
+
+sentry:
+  dsn: secret
+
+youtrack:
+  token: secret

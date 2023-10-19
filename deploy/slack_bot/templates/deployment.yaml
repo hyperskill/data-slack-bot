@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "slack_bot.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "slack_bot.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "slack_bot.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "slack_bot.selectorLabels" . | nindent 8 }}
+    spec:
+      imagePullSecrets:
+        - name: {{ include "slack_bot.fullname" . }}-docker-secret
+      serviceAccountName: {{ include "slack_bot.serviceAccountName" . }}
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1024Mi
+          envFrom:
+            - secretRef:
+                name: {{ include "slack_bot.fullname" . }}
+            - configMapRef:
+                name: {{ include "slack_bot.fullname" . }}
