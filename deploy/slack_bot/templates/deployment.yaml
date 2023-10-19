@@ -17,8 +17,6 @@ spec:
       labels:
         {{- include "slack_bot.selectorLabels" . | nindent 8 }}
     spec:
-      imagePullSecrets:
-        - name: {{ include "slack_bot.fullname" . }}-docker-secret
       serviceAccountName: {{ include "slack_bot.serviceAccountName" . }}
       securityContext:
         fsGroup: 1000
