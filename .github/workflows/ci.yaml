@@ -9,39 +9,51 @@ jobs:
     runs-on: [self-hosted, small]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+
       - name: Install Poetry
         run: python -m pip install --upgrade poetry==1.5.1
+
       - name: Config poetry
         run: poetry config virtualenvs.create false
+
       - name: Install dependencies
         run: poetry install --only main,dev --no-interaction --no-ansi --no-cache
         working-directory: ./slack_bot
+
       - name: Lint
         run: ruff .
         working-directory: ./slack_bot
+
   type_checking:
     name: Static type checking
     runs-on: [ self-hosted, small ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+
       - name: Install Poetry
         run: python -m pip install --upgrade poetry==1.5.1
+
       - name: Config poetry
         run: poetry config virtualenvs.create false
+
       - name: Install dependencies
         run: poetry install --only main,dev --no-interaction --no-ansi --no-cache
         working-directory: ./slack_bot
+
       - name: Lint
         run: mypy .
         working-directory: ./slack_bot
+
   deploy:
     name: Deploy
     needs:
@@ -52,15 +64,18 @@ jobs:
     runs-on: [self-hosted, small]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           registry: hyperskill.azurecr.io/hyperskill
           username: ${{ secrets.AZ_REGISTRY_USERNAME }}
           password: ${{ secrets.AZ_REGISTRY_PASSWORD }}
+
       - name: Build
         uses: docker/build-push-action@v3
         with:
@@ -69,12 +84,17 @@ jobs:
           tags: hyperskill.azurecr.io/hyperskill/dataslackbot:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha
-      - uses: tale/kubectl-action@v1
+
+      - name: Set up Helm
+        uses: ./.github/workflows/actions/helm
         with:
-          base64-kube-config: ${{ secrets.KUBE_CONFIG }}
-      - uses: azure/setup-helm@v3
-        with:
-          version: 'v3.10.1'
+          resource_group: ${{ vars.RESOURCE_GROUP }}
+          cluster_name: ${{ vars.CLUSTER_NAME }}
+          client_id: ${{ secrets.CLIENT_ID }}
+          client_secret: ${{ secrets.CLIENT_SECRET }}
+          subscription_id: ${{ secrets.SUBSCRIPTION_ID }}
+          tenant_id: ${{ secrets.TENANT_ID }}
+
       - name: Deploy
         run: |
           helm upgrade data-slack-bot ./deploy/slack_bot \

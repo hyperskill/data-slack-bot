@@ -1,0 +1,53 @@
+name: 'Prepare helm'
+description: 'Prepare helm'
+
+inputs:
+  resource_group:
+    required: true
+    description: Resource name
+  cluster_name:
+    required: true
+    description: Cluster name
+  client_id:
+    required: true
+    description: Azure client id
+  client_secret:
+    required: true
+    description: Azure client secret
+  subscription_id:
+    required: true
+    description: Azure subscription id
+  tenant_id:
+    required: true
+    description: Azure tenant id
+  helm_version:
+    default: 'v3.11.1'
+    description: 'Helm version'
+  kubectl_version:
+    default: 'v1.28.2'
+    description: 'kubectl version'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Helm
+      uses: azure/setup-helm@v1
+      with:
+        version: ${{ inputs.helm_version }}
+
+    - uses: hyperskill/azure-login@v1.0.1
+      with:
+        client_id: ${{ inputs.client_id }}
+        client_secret: ${{ inputs.client_secret }}
+        subscription_id: ${{ inputs.subscription_id }}
+        tenant_id: ${{ inputs.tenant_id }}
+
+    - uses: azure/setup-kubectl@v3
+      with:
+        version: ${{ inputs.kubectl_version }}
+
+    - name: Azure Kubernetes set context
+      uses: Azure/aks-set-context@v3
+      with:
+        resource-group: ${{ inputs.resource_group }}
+        cluster-name: ${{ inputs.cluster_name }}
