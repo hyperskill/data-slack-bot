@@ -453,7 +453,7 @@ pyautogen = "^0.1.11"
 
 [package.source]
 type = "git"
-url = "https://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@github.com/hyperskill/data-assistant.git"
+url = "ssh://git@github.com/hyperskill/data-assistant.git"
 reference = "v0.1.4"
 resolved_reference = "d310ee91453f1925a57a23a201992be2b4a55dce"
 
@@ -1368,4 +1368,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "3e96945ed87a207299ddbe3f09607506e589517f9d2b184ca615c1c62e33bab6"
+content-hash = "e294e67b0975af1b355b25361875e994a027ee0301744e4dea3a2bfcf0fc63b9"

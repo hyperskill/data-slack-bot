@@ -12,7 +12,7 @@ python-dotenv = "1.0.0"
 pygithub = "1.59.1"
 structlog = "23.1.0"
 structlog-sentry = "2.0.3"
-data-assistant = {git = "https://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@github.com/hyperskill/data-assistant.git", rev = "v0.1.4"}
+data-assistant = {git = "ssh://git@github.com/hyperskill/data-assistant.git", rev = "v0.1.4"}
 
 [tool.poetry.group.dev.dependencies]
 black = "23.9.1"
