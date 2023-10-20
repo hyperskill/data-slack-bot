@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from slack_sdk.web import WebClient
 
 
-load_dotenv()
+load_dotenv(".vars")
 logger = logging.getLogger(__name__)
 
 
