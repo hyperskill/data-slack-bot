@@ -16,7 +16,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install Poetry
-        run: python -m pip install --upgrade poetry==1.5.1
+        run: python -m pip install --upgrade poetry==1.6.1
 
       - name: Config poetry
         run: poetry config virtualenvs.create false
@@ -41,7 +41,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install Poetry
-        run: python -m pip install --upgrade poetry==1.5.1
+        run: python -m pip install --upgrade poetry==1.6.1
 
       - name: Config poetry
         run: poetry config virtualenvs.create false
@@ -106,3 +106,4 @@ jobs:
           --set image.dockerConfigJson=${{ secrets.DOCKER_CONFIG_JSON }} \
           --set slack.appToken=${{ secrets.SLACK_APP_TOKEN }} \
           --set slack.botToken=${{ secrets.SLACK_BOT_TOKEN }}
+          --set openai.oaiToken=${{ secrets.OPENAI_API_KEY }}
