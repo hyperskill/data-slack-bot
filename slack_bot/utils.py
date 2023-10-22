@@ -1,15 +1,19 @@
 from __future__ import annotations
 
+import json
 import os
 import re
+import traceback
+from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
 import tiktoken
 from dotenv import load_dotenv
 from trafilatura import extract, fetch_url
 from trafilatura.settings import use_config
+
 from slack_bot.db import DB
-from pathlib import Path
+from youtrack import YouTrack
 
 load_dotenv()
 
@@ -24,12 +28,17 @@ newconfig.set("DEFAULT", "EXTRACTION_TIMEOUT", "0")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+YT_BASE_URL = os.environ.get("YT_BASE_URL")
+YT_API_TOKEN = os.environ.get("YT_API_TOKEN")
 
 prompts = DB(Path(__file__).parent / "prompts")
 templates = DB(Path(__file__).parent / "templates")
+functions = DB(Path(__file__).parent / "functions")
 AN_COMMAND = "an"
+YT_COMMAND = "yt"
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
+MODEL = "gpt-4"
 
 
 def extract_url_list(text: str) -> list[str] | None:
@@ -186,10 +195,41 @@ def make_ai_response(
         num_tokens = num_tokens_from_messages(messages)
         print(f"Number of tokens: {num_tokens}")  # noqa: T201
 
-        openai_response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo", messages=messages
-        )
-        response_text = openai_response.choices[0].message["content"]
+        last_msg = messages[-1]
+
+        if (last_msg["role"] == "user") & (last_msg["content"] == YT_COMMAND):
+            funcs = [json.loads(functions["create_issue"])]
+            openai_response = openai.ChatCompletion.create(
+                model=MODEL,
+                messages=messages,
+                functions=funcs,
+                function_call={"name": "create_issue"},
+            )
+
+            arguments = json.loads(
+                openai_response.choices[0]
+                .message.get("function_call", {})
+                .get("arguments", {}),
+                strict=False,
+            )
+
+            yt = YouTrack(
+                base_url=YT_BASE_URL,
+                token=YT_API_TOKEN,
+            )
+
+            response_text = str(
+                yt.create_issue(
+                    summary=arguments["summary"],
+                    description=arguments["description"],
+                )
+            )
+        else:
+            openai_response = openai.ChatCompletion.create(
+                model=MODEL, messages=messages
+            )
+            response_text = openai_response.choices[0].message["content"]
+
         app.client.chat_update(
             channel=channel_id, ts=reply_message_ts, text=response_text
         )
@@ -200,3 +240,4 @@ def make_ai_response(
             thread_ts=thread_ts,
             text=f"I can't provide a response. Encountered an error:\n`\n{e}\n`",
         )
+        traceback.print_exc()

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-cd slack_bot || exit
-
 echo "Formatting code..."
 black .
 
