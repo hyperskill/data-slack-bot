@@ -8,6 +8,8 @@ import tiktoken
 from dotenv import load_dotenv
 from trafilatura import extract, fetch_url
 from trafilatura.settings import use_config
+from slack_bot.db import DB
+from pathlib import Path
 
 load_dotenv()
 
@@ -23,11 +25,9 @@ SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-SYSTEM_PROMPT = """
-You are an AI assistant.
-You will answer the question as truthfully as possible.
-If you're unsure of the answer, say Sorry, I don't know.
-"""
+prompts = DB(Path(__file__).parent / "prompts")
+templates = DB(Path(__file__).parent / "templates")
+AN_COMMAND = "an"
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
 
@@ -76,7 +76,7 @@ def num_tokens_from_messages(
 
     elif model == "gpt-4":  # noqa: RET505
         print(  # noqa: T201
-            "Warning: gpt-4 may change over time."
+            "Warning: gpt-4 may change over time. "
             "Returning num tokens assuming gpt-4-0314."
         )
 
@@ -136,7 +136,18 @@ def process_message(message: dict[str, str], bot_user_id: str, role: str) -> str
 def process_conversation_history(
     conversation_history: SlackResponse, bot_user_id: str
 ) -> list[dict[str, str]]:
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages = []
+
+    cleaned_message = (
+        conversation_history["messages"][0]["text"]
+        .replace(f"<@{bot_user_id}>", "")
+        .strip()
+    )
+
+    if cleaned_message == AN_COMMAND:
+        conversation_history["messages"].pop(0)
+        system = prompts["clarification"].replace("{template}", templates["yt_issue"])
+        messages.append({"role": "system", "content": system})
 
     for message in conversation_history["messages"][:-1]:
         role = "assistant" if message["user"] == bot_user_id else "user"
@@ -171,6 +182,7 @@ def make_ai_response(
 
         conversation_history = get_conversation_history(app, channel_id, thread_ts)
         messages = process_conversation_history(conversation_history, bot_user_id)
+
         num_tokens = num_tokens_from_messages(messages)
         print(f"Number of tokens: {num_tokens}")  # noqa: T201
 

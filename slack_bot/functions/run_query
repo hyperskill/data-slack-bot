@@ -1,0 +1,13 @@
+{
+    "name": "run_query",
+    "description": "Runs SQL query against a db and returns result",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sql_query": {
+                "type": "string",
+                "description": "SQL query to run"
+            }
+        }
+    }
+}
