@@ -128,7 +128,41 @@ def clean_message_text(message_text: str, role: str, bot_user_id: str) -> Any | 
     return None
 
 
-def update_chat(
-    app: App, channel_id: str, reply_message_ts: str, response_text: str
+def get_conversation_history(
+    app: App, channel_id: str, thread_ts: str
+) -> SlackResponse:
+    return app.client.conversations_replies(
+        channel=channel_id, ts=thread_ts, inclusive=True
+    )
+
+
+def make_ai_response(
+    app: App, body: dict[str, dict[str, str]], context: dict[str, str], openai: Any
 ) -> None:
-    app.client.chat_update(channel=channel_id, ts=reply_message_ts, text=response_text)
+    try:
+        channel_id = body["event"]["channel"]
+        thread_ts = body["event"].get("thread_ts", body["event"]["ts"])
+        bot_user_id = context["bot_user_id"]
+        slack_resp = app.client.chat_postMessage(
+            channel=channel_id, thread_ts=thread_ts, text=WAIT_MESSAGE
+        )
+        reply_message_ts = slack_resp["message"]["ts"]
+        conversation_history = get_conversation_history(app, channel_id, thread_ts)
+        messages = process_conversation_history(conversation_history, bot_user_id)
+        num_tokens = num_tokens_from_messages(messages)
+        print(f"Number of tokens: {num_tokens}")  # noqa: T201
+
+        openai_response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo", messages=messages
+        )
+        response_text = openai_response.choices[0].message["content"]
+        app.client.chat_update(
+            channel=channel_id, ts=reply_message_ts, text=response_text
+        )
+    except Exception as e:  # noqa: BLE001
+        print(f"Error: {e}")  # noqa: T201
+        app.client.chat_postMessage(
+            channel=channel_id,
+            thread_ts=thread_ts,
+            text=f"I can't provide a response. Encountered an error:\n`\n{e}\n`",
+        )
