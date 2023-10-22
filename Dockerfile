@@ -2,7 +2,7 @@ FROM python:3.11-alpine
 LABEL authors="Hyperskill Team"
 
 RUN apk add --no-cache bash \
-  && python -m pip install --upgrade poetry==1.5.1
+  && python -m pip install --upgrade poetry==1.6.1
 
 COPY slack_bot/pyproject.toml slack_bot/poetry.lock ./
 RUN poetry config virtualenvs.create false \
