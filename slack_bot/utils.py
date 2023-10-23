@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from trafilatura import extract, fetch_url
 from trafilatura.settings import use_config
 
-from slack_bot.db import DB
+from db import DB
 from youtrack import YouTrack
 
 load_dotenv()

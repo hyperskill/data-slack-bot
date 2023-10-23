@@ -4,7 +4,7 @@ import openai
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
-from slack_bot.utils import (
+from utils import (
     make_ai_response,
     OPENAI_API_KEY,
     SLACK_APP_TOKEN,
