@@ -106,4 +106,5 @@ jobs:
           --set image.dockerConfigJson=${{ secrets.DOCKER_CONFIG_JSON }} \
           --set slack.appToken=${{ secrets.SLACK_APP_TOKEN }} \
           --set slack.botToken=${{ secrets.SLACK_BOT_TOKEN }} \
-          --set openai.oaiToken=${{ secrets.OPENAI_API_KEY }}
+          --set openai.oaiToken=${{ secrets.OPENAI_API_KEY }} \
+          --set youtrack.apiToken=${{ secrets.YT_API_TOKEN }}

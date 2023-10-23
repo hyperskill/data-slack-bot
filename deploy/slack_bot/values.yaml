@@ -21,3 +21,6 @@ slack:
 
 openai:
   oaiToken: secret
+
+youtrack:
+  apiToken: secret
