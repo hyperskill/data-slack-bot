@@ -28,12 +28,12 @@ newconfig.set("DEFAULT", "EXTRACTION_TIMEOUT", "0")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-YT_BASE_URL = os.environ.get("YT_BASE_URL")
 YT_API_TOKEN = os.environ.get("YT_API_TOKEN")
 
 prompts = DB(Path(__file__).parent / "prompts")
 templates = DB(Path(__file__).parent / "templates")
 functions = DB(Path(__file__).parent / "functions")
+YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
 AN_COMMAND = "an"
 YT_COMMAND = "yt"
 WAIT_MESSAGE = "Got your request. Please wait."
