@@ -27,7 +27,7 @@ class YouTrack:
 
     def create_issue(
         self, summary: str, description: str, project: str = "43-46"
-    ) -> Any | None:
+    ) -> dict[str, Any] | IssueCreationError:
         """Create an issue in YouTrack."""
         url = f"{self.base_url}/api/issues"
         headers = {

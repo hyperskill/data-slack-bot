@@ -176,6 +176,38 @@ def get_conversation_history(
     )
 
 
+def submit_issue(messages: list[dict[str, str]], openai: Any) -> str:
+    funcs = [json.loads(functions["create_issue"])]
+    openai_response = openai.ChatCompletion.create(
+        model=MODEL,
+        messages=messages,
+        functions=funcs,
+        function_call={"name": "create_issue"},
+    )
+
+    arguments = json.loads(
+        openai_response.choices[0]
+        .message.get("function_call", {})
+        .get("arguments", {}),
+        strict=False,
+    )
+
+    yt = YouTrack(
+        base_url=YT_BASE_URL,
+        token=YT_API_TOKEN,
+    )
+
+    response_text = yt.create_issue(
+        summary=arguments["summary"],
+        description=arguments["description"],
+    )
+
+    if isinstance(response_text, Exception):
+        raise response_text
+
+    return f"{YT_BASE_URL}/issue/{response_text['id']}"
+
+
 def make_ai_response(
     app: App, body: dict[str, dict[str, str]], context: dict[str, str], openai: Any
 ) -> None:
@@ -198,32 +230,8 @@ def make_ai_response(
         last_msg = messages[-1]
 
         if (last_msg["role"] == "user") & (last_msg["content"] == YT_COMMAND):
-            funcs = [json.loads(functions["create_issue"])]
-            openai_response = openai.ChatCompletion.create(
-                model=MODEL,
-                messages=messages,
-                functions=funcs,
-                function_call={"name": "create_issue"},
-            )
-
-            arguments = json.loads(
-                openai_response.choices[0]
-                .message.get("function_call", {})
-                .get("arguments", {}),
-                strict=False,
-            )
-
-            yt = YouTrack(
-                base_url=YT_BASE_URL,
-                token=YT_API_TOKEN,
-            )
-
-            response_text = str(
-                yt.create_issue(
-                    summary=arguments["summary"],
-                    description=arguments["description"],
-                )
-            )
+            messages.pop()
+            response_text = submit_issue(messages=messages, openai=openai)
         else:
             openai_response = openai.ChatCompletion.create(
                 model=MODEL, messages=messages
