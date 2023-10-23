@@ -1,16 +1,16 @@
 {
     "name": "create_issue",
-    "description": "Create an issue in YouTrack",
+    "description": "Create a YouTrack issue",
     "parameters": {
         "type": "object",
         "properties": {
             "summary": {
                 "type": "string",
-                "description": "Issue summary"
+                "description": "Issue summary (come up with an issue title here)"
             },
             "description": {
                 "type": "string",
-                "description": "Issue description"
+                "description": "Issue description (pass filled ${template} here)"
             }
         },
         "required": ["summary", "description"]
