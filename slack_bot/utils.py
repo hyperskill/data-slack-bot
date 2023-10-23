@@ -155,7 +155,9 @@ def process_conversation_history(
 
     if cleaned_message == AN_COMMAND:
         conversation_history["messages"].pop(0)
-        system = prompts["clarification"].replace("{template}", templates["yt_issue"])
+        system = prompts["clarification"].replace(  # type: ignore[union-attr]
+            "{template}", templates["yt_issue"]  # type: ignore[arg-type]
+        )
         messages.append({"role": "system", "content": system})
 
     for message in conversation_history["messages"][:-1]:
@@ -177,7 +179,7 @@ def get_conversation_history(
 
 
 def submit_issue(messages: list[dict[str, str]], openai: Any) -> str:
-    funcs = [json.loads(functions["create_issue"])]
+    funcs = [json.loads(functions["create_issue"])]  # type: ignore[arg-type]
     openai_response = openai.ChatCompletion.create(
         model=MODEL,
         messages=messages,
