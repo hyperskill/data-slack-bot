@@ -14,6 +14,9 @@ spec:
       {{- include "slack_bot.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        co.elastic.logs.{{ .Chart.Name }}/enabled: "true"
+        co.elastic.logs/processors.add_fields.fields.log-type: "internal"
       labels:
         {{- include "slack_bot.selectorLabels" . | nindent 8 }}
     spec:
