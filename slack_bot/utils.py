@@ -142,25 +142,22 @@ def process_message(message: dict[str, str], bot_user_id: str, role: str) -> str
     return clean_message_text(message_text, role, bot_user_id)
 
 
-def process_conversation_history(
-    conversation_history: SlackResponse, bot_user_id: str
+def process_conversation_messages(
+    conversation_messages: list[dict[str, str]], bot_user_id: str
 ) -> list[dict[str, str]]:
-    messages = []
+    conversation_messages.pop()  # remove WAIT_MESSAGE
+    messages: list[dict[str, str]] = []
 
-    cleaned_message = (
-        conversation_history["messages"][0]["text"]
-        .replace(f"<@{bot_user_id}>", "")
-        .strip()
-    )
+    for message in conversation_messages:
+        cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
 
-    if cleaned_message == AN_COMMAND:
-        conversation_history["messages"].pop(0)
-        system = prompts["clarification"].replace(  # type: ignore[union-attr]
-            "{template}", templates["yt_issue"]  # type: ignore[arg-type]
-        )
-        messages.append({"role": "system", "content": system})
+        if cleaned_message == AN_COMMAND:
+            system = prompts["clarification"].replace(  # type: ignore[union-attr]
+                "{template}", templates["yt_issue"]  # type: ignore[arg-type]
+            )
+            messages.append({"role": "system", "content": system})
+            continue
 
-    for message in conversation_history["messages"][:-1]:
         role = "assistant" if message["user"] == bot_user_id else "user"
         message_text = process_message(message, bot_user_id, role)
 
@@ -168,14 +165,6 @@ def process_conversation_history(
             messages.append({"role": role, "content": message_text})
 
     return messages
-
-
-def get_conversation_history(
-    app: App, channel_id: str, thread_ts: str
-) -> SlackResponse:
-    return app.client.conversations_replies(
-        channel=channel_id, ts=thread_ts, inclusive=True
-    )
 
 
 def submit_issue(messages: list[dict[str, str]], openai: Any) -> str:
@@ -223,8 +212,10 @@ def make_ai_response(
         )
         reply_message_ts = slack_resp["message"]["ts"]
 
-        conversation_history = get_conversation_history(app, channel_id, thread_ts)
-        messages = process_conversation_history(conversation_history, bot_user_id)
+        conversation_messages = app.client.conversations_replies(
+            channel=channel_id, ts=thread_ts, inclusive=True
+        )["messages"]
+        messages = process_conversation_messages(conversation_messages, bot_user_id)
 
         num_tokens = num_tokens_from_messages(messages)
         print(f"Number of tokens: {num_tokens}")  # noqa: T201
@@ -232,7 +223,7 @@ def make_ai_response(
         last_msg = messages[-1]
 
         if (last_msg["role"] == "user") & (last_msg["content"] == YT_COMMAND):
-            messages.pop()
+            messages.pop()  # remove YT_COMMAND
             response_text = submit_issue(messages=messages, openai=openai)
         else:
             openai_response = openai.ChatCompletion.create(
