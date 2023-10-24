@@ -20,7 +20,6 @@ load_dotenv()
 
 if TYPE_CHECKING:
     from slack_bolt import App
-    from slack_sdk.web import SlackResponse
 
 newconfig = use_config()
 newconfig.set("DEFAULT", "EXTRACTION_TIMEOUT", "0")
