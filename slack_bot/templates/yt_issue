@@ -1,10 +1,12 @@
 ### Motivation (Why?)
-[comment]: <> (Please, describe the motivation for this task. Why do you need it? What is the problem you are trying to solve?)
+[comment]: <> (Please, describe the motivation for this task. What problem you are trying to solve?)
 
-### TODO:
-[comment]: <> (What do you expect to see as a result of this task? What should the results of this task contain?)
+### Context (What?)
+[comment]: <> (Please, describe the context of this task. What is the current situation?)
+
+### TODO (How?)
+[comment]: <> (What do you expect to see as a result?)
 
 ### Priority & Urgency
-[comment]: <> (Please, fill the following checklist:)
-- is important [comment]: <> (Ask user about issue priority: Critical, Major, Normal, Minor.)
-- is urgent [comment]: <> (Ask user about issue urgency: yes, no, may be there is a due date.)
+- is important [comment]: <> (Critical, Major, Normal, Minor)
+- is urgent [comment]: <> (yes, no, may be there is a due date)
