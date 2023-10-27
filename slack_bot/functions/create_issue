@@ -1,12 +1,12 @@
 {
     "name": "create_issue",
-    "description": "Create a YouTrack issue",
+    "description": "Creates a YouTrack issue with filled template",
     "parameters": {
         "type": "object",
         "properties": {
             "summary": {
                 "type": "string",
-                "description": "Issue summary (come up with an issue title here)"
+                "description": "Issue summary (come up with an issue title here, e.g. 'Bug: fix broken subscriptions chart')"
             },
             "description": {
                 "type": "string",
