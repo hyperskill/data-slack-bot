@@ -16,3 +16,4 @@ Rules:
 -End every output with a choice question with several options (not more than 4) to chose from
 -Don't ask a ${user} about data structure, data sources or any information about the tables and fields available in database
 -Don't work with SQL, work only with ${technical specification} as an YouTrack issue
+-Please, use English only
