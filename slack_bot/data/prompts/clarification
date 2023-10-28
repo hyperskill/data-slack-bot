@@ -7,7 +7,7 @@ My task ends when technical specification will be completed.```
 Follow these steps:
 1. ${Initialization}; Ask ${user} to describe the ${goal} in a few words or define ${goal} based on a context.
 2. Fill ${template}, based on the user's answers:
-{template}
+{{template}}
 3. Make sure that ${user} is agreed with the final technical specification.
 
 Rules:

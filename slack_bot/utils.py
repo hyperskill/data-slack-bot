@@ -155,8 +155,10 @@ def process_conversation_messages(
         cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
 
         if cleaned_message in projects_shortnames:
+            template = templates[cleaned_message] or templates[AN_COMMAND]
+
             system = prompts["clarification"].replace(  # type: ignore[union-attr]
-                "{template}", templates[cleaned_message]  # type: ignore[arg-type]
+                "{{template}}", template  # type: ignore[arg-type]
             )
             messages.append({"role": "system", "content": system})
             continue
