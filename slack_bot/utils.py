@@ -29,15 +29,19 @@ SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 YT_API_TOKEN = os.environ.get("YT_API_TOKEN")
 
-prompts = DB(Path(__file__).parent / "prompts")
-templates = DB(Path(__file__).parent / "templates")
-functions = DB(Path(__file__).parent / "functions")
-YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
-AN_COMMAND = "an"
-YT_COMMAND = "yt"
+data = DB(Path(__file__).parent / "data")
+prompts = DB(Path(__file__).parent / "data" / "prompts")
+templates = DB(Path(__file__).parent / "data" / "templates")
+functions = DB(Path(__file__).parent / "data" / "functions")
+
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
 MODEL = "gpt-4"
+projects = json.loads(data["yt_projects.json"])  # type: ignore[arg-type]
+projects_shortnames = [project["shortName"].lower() for project in projects]
+AN_COMMAND = "an"
+YT_COMMAND = "yt"
+YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
 
 
 def extract_url_list(text: str) -> list[str] | None:
@@ -150,9 +154,9 @@ def process_conversation_messages(
     for message in conversation_messages:
         cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
 
-        if cleaned_message == AN_COMMAND:
+        if cleaned_message in projects_shortnames:
             system = prompts["clarification"].replace(  # type: ignore[union-attr]
-                "{template}", templates["yt_issue"]  # type: ignore[arg-type]
+                "{template}", templates[cleaned_message]  # type: ignore[arg-type]
             )
             messages.append({"role": "system", "content": system})
             continue
@@ -166,7 +170,7 @@ def process_conversation_messages(
     return messages
 
 
-def submit_issue(messages: list[dict[str, str]], openai: Any) -> str:
+def submit_issue(messages: list[dict[str, str]], openai: Any, project_id: str) -> str:
     funcs = [json.loads(functions["create_issue"])]  # type: ignore[arg-type]
     openai_response = openai.ChatCompletion.create(
         model=MODEL,
@@ -190,6 +194,7 @@ def submit_issue(messages: list[dict[str, str]], openai: Any) -> str:
     response_text = yt.create_issue(
         summary=arguments["summary"],
         description=arguments["description"],
+        project=project_id,
     )
 
     if isinstance(response_text, Exception):
@@ -220,10 +225,27 @@ def make_ai_response(
         print(f"Number of tokens: {num_tokens}")  # noqa: T201
 
         last_msg = messages[-1]
+        last_msg_content = last_msg["content"]
+        left_part = last_msg_content.split(" ")[0]
+        right_part = last_msg_content.split(" ")[-1]
 
-        if (last_msg["role"] == "user") & (last_msg["content"] == YT_COMMAND):
+        if right_part in projects_shortnames:
+            project_id = next(
+                iter(
+                    filter(
+                        lambda project: project["shortName"].lower() == right_part,
+                        projects,
+                    )
+                )
+            )["id"]
+        else:
+            project_id = "43-46"
+
+        if (last_msg["role"] == "user") & (left_part == YT_COMMAND):
             messages.pop()  # remove YT_COMMAND
-            response_text = submit_issue(messages=messages, openai=openai)
+            response_text = submit_issue(
+                messages=messages, openai=openai, project_id=project_id
+            )
         else:
             openai_response = openai.ChatCompletion.create(
                 model=MODEL, messages=messages

@@ -1,3 +1,9 @@
+[comment]: <> (This issue will be assigned to a Data Team (data engineers, analysts))
+[comment]: <> (
+Custom Rules:
+-Don't ask a ${user} about data structure, data sources or any information about the tables and fields available in database
+-Don't work with code (SQL), work only with ${technical specification} as a YouTrack issue
+)
 ### Motivation (Why?)
 [comment]: <> (Please, describe the motivation for this task. What problem you are trying to solve?)
 

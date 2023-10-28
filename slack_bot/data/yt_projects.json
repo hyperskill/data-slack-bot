@@ -1,0 +1,230 @@
+[
+  {
+    "shortName": "SADM",
+    "name": "Administration",
+    "id": "43-45",
+    "$type": "Project"
+  },
+  {
+    "shortName": "AN",
+    "name": "Analytics",
+    "id": "43-46",
+    "$type": "Project"
+  },
+  {
+    "shortName": "CT",
+    "name": "Cogniterra",
+    "id": "43-85",
+    "$type": "Project"
+  },
+  {
+    "shortName": "FICPL",
+    "name": "FICPL",
+    "id": "43-79",
+    "$type": "Project"
+  },
+  {
+    "shortName": "HR",
+    "name": "HR (Legacy)",
+    "id": "43-60",
+    "$type": "Project"
+  },
+  {
+    "shortName": "ALTC",
+    "name": "Hyperskill Content",
+    "id": "43-41",
+    "$type": "Project"
+  },
+  {
+    "shortName": "ALTCBUG",
+    "name": "Hyperskill Content Errors",
+    "id": "43-55",
+    "$type": "Project"
+  },
+  {
+    "shortName": "ALT",
+    "name": "Hyperskill Develop",
+    "id": "43-39",
+    "$type": "Project"
+  },
+  {
+    "shortName": "HSHR",
+    "name": "Hyperskill HR",
+    "id": "43-77",
+    "$type": "Project"
+  },
+  {
+    "shortName": "HSMS",
+    "name": "Hyperskill Marketing and Sales",
+    "id": "43-75",
+    "$type": "Project"
+  },
+  {
+    "shortName": "ALTAPPS",
+    "name": "Hyperskill Mobile Apps",
+    "id": "43-66",
+    "$type": "Project"
+  },
+  {
+    "shortName": "ALTUX",
+    "name": "Hyperskill Product & UX",
+    "id": "43-43",
+    "$type": "Project"
+  },
+  {
+    "shortName": "HSPC",
+    "name": "Hyperskill Projects Checker",
+    "id": "43-76",
+    "$type": "Project"
+  },
+  {
+    "shortName": "HQA",
+    "name": "Hyperskill QA",
+    "id": "43-61",
+    "$type": "Project"
+  },
+  {
+    "shortName": "HSS",
+    "name": "Hyperskill Studio",
+    "id": "43-70",
+    "$type": "Project"
+  },
+  {
+    "shortName": "ALTZD",
+    "name": "Hyperskill Support",
+    "id": "43-56",
+    "$type": "Project"
+  },
+  {
+    "shortName": "TESTALT",
+    "name": "Hyperskill Test",
+    "id": "43-49",
+    "$type": "Project"
+  },
+  {
+    "shortName": "ICM",
+    "name": "Incident management",
+    "id": "43-78",
+    "$type": "Project"
+  },
+  {
+    "shortName": "SRE",
+    "name": "Infrastructure",
+    "id": "43-72",
+    "$type": "Project"
+  },
+  {
+    "shortName": "LGL",
+    "name": "Legal",
+    "id": "43-53",
+    "$type": "Project"
+  },
+  {
+    "shortName": "MAIL",
+    "name": "Mail",
+    "id": "43-62",
+    "$type": "Project"
+  },
+  {
+    "shortName": "MNG",
+    "name": "Management",
+    "id": "43-74",
+    "$type": "Project"
+  },
+  {
+    "shortName": "ML",
+    "name": "ML",
+    "id": "43-63",
+    "$type": "Project"
+  },
+  {
+    "shortName": "PAY",
+    "name": "Payment Requests",
+    "id": "43-50",
+    "$type": "Project"
+  },
+  {
+    "shortName": "CONTENT",
+    "name": "Stepik Content",
+    "id": "43-35",
+    "$type": "Project"
+  },
+  {
+    "shortName": "DATA",
+    "name": "Stepik Data",
+    "id": "43-36",
+    "$type": "Project"
+  },
+  {
+    "shortName": "EDD",
+    "name": "Stepik Design",
+    "id": "43-23",
+    "$type": "Project"
+  },
+  {
+    "shortName": "EDY",
+    "name": "Stepik Develop",
+    "id": "43-13",
+    "$type": "Project"
+  },
+  {
+    "shortName": "GROWTH",
+    "name": "Stepik Growth",
+    "id": "43-27",
+    "$type": "Project"
+  },
+  {
+    "shortName": "SM",
+    "name": "Stepik Marketing",
+    "id": "43-34",
+    "$type": "Project"
+  },
+  {
+    "shortName": "APPS",
+    "name": "Stepik Mobile Apps Develop",
+    "id": "43-31",
+    "$type": "Project"
+  },
+  {
+    "shortName": "APPSUX",
+    "name": "Stepik Mobile Design&UX",
+    "id": "43-42",
+    "$type": "Project"
+  },
+  {
+    "shortName": "SQA",
+    "name": "Stepik QA",
+    "id": "43-40",
+    "$type": "Project"
+  },
+  {
+    "shortName": "TEST",
+    "name": "Stepik Test",
+    "id": "43-29",
+    "$type": "Project"
+  },
+  {
+    "shortName": "TESTAPPS",
+    "name": "Stepik Test Mobile",
+    "id": "43-32",
+    "$type": "Project"
+  },
+  {
+    "shortName": "EDUX",
+    "name": "Stepik UX",
+    "id": "43-30",
+    "$type": "Project"
+  },
+  {
+    "shortName": "VIDEO",
+    "name": "Stepik Video",
+    "id": "43-25",
+    "$type": "Project"
+  },
+  {
+    "shortName": "R",
+    "name": "UX Research",
+    "id": "43-73",
+    "$type": "Project"
+  }
+]
