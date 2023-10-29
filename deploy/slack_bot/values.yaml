@@ -24,3 +24,8 @@ openai:
 
 youtrack:
   apiToken: secret
+
+clickhouse:
+  host: secret
+  user: secret
+  password: secret

@@ -107,4 +107,7 @@ jobs:
           --set slack.appToken=${{ secrets.SLACK_APP_TOKEN }} \
           --set slack.botToken=${{ secrets.SLACK_BOT_TOKEN }} \
           --set openai.oaiToken=${{ secrets.OPENAI_API_KEY }} \
-          --set youtrack.apiToken=${{ secrets.YT_API_TOKEN }}
+          --set youtrack.apiToken=${{ secrets.YT_API_TOKEN }} \
+          --set clickhouse.host=${{ secrets.CLICKHOUSE_HOST }} \
+          --set clickhouse.user=${{ secrets.CLICKHOUSE_USER }} \
+          --set clickhouse.password=${{ secrets.CLICKHOUSE_PASSWORD }}

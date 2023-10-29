@@ -4,8 +4,8 @@ from typing import Any
 
 import openai
 
-DEFAULT_MODEL = "gpt-3.5-turbo"
-DEFAULT_TEMPERATURE = 0
+DEFAULT_MODEL = "gpt-4"  # "gpt-3.5-turbo"
+DEFAULT_TEMPERATURE = 0.1
 
 
 class Assistant:
