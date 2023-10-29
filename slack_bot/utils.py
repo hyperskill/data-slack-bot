@@ -13,6 +13,8 @@ from trafilatura import extract, fetch_url
 from trafilatura.settings import use_config
 
 from db import DB
+from slack_bot.assistant import Assistant, Phase
+from slack_bot.clickhouse import ClickHouse
 from youtrack import YouTrack
 
 load_dotenv()
@@ -33,6 +35,7 @@ data = DB(Path(__file__).parent / "data")
 prompts = DB(Path(__file__).parent / "data" / "prompts")
 templates = DB(Path(__file__).parent / "data" / "templates")
 functions = DB(Path(__file__).parent / "data" / "functions")
+shots = DB(Path(__file__).parent.parent / "data" / "shots")
 
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
@@ -41,6 +44,7 @@ projects = json.loads(data["yt_projects.json"])  # type: ignore[arg-type]
 projects_shortnames = [project["shortName"].lower() for project in projects]
 AN_COMMAND = "an"
 YT_COMMAND = "yt"
+SQL_COMMAND = "sql"
 YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
 
 
@@ -145,7 +149,7 @@ def process_message(message: dict[str, str], bot_user_id: str, role: str) -> str
     return clean_message_text(message_text, role, bot_user_id)
 
 
-def process_conversation_messages(
+def process_conversation(
     conversation_messages: list[dict[str, str]], bot_user_id: str
 ) -> list[dict[str, str]]:
     conversation_messages.pop()  # remove WAIT_MESSAGE
@@ -205,6 +209,64 @@ def submit_issue(messages: list[dict[str, str]], openai: Any, project_id: str) -
     return f"{YT_BASE_URL}/issue/{response_text['id']}"
 
 
+def generate_sql(problem: str) -> str:
+    print(problem)
+    assistant = Assistant(os.environ.get("OPENAI_API_KEY"))
+    ch_client = ClickHouse().client
+
+    dev_shots = [
+        {"role": "user", "content": shots["dump_users"]},
+        {"role": "assistant", "content": shots["dump_users.sql"]},
+        {"role": "user", "content": shots["users_part"]},
+        {"role": "assistant", "content": shots["users_part.sql"]},
+    ]
+    testing_funcs = [json.loads(functions["run_query"])]
+    phases = {
+        "developing": Phase(
+            name="developing",
+            role=prompts["developing"],
+            shots=dev_shots,
+        ),
+        "testing": Phase(
+            name="testing",
+            role=prompts["testing"],
+            functions=testing_funcs,
+        ),
+    }
+
+    phase = phases["developing"]
+    phase.update_history("user", problem)
+    phase.result = assistant.get_completion(
+        messages=phases["developing"].history,
+    )
+
+    print(phase.result)
+
+    phase = phases["testing"]
+    phase.update_history("user", phases["developing"].result)
+
+    for _ in range(3):
+        try:
+            response = assistant.get_completion(
+                messages=phase.history,
+                functions=phase.functions,
+                function_call={"name": "run_query"},
+            )
+
+            phase.result = str(
+                ch_client.execute(json.loads(response, strict=False)["sql_query"])
+            )
+            print(phase.result)
+            break
+
+        except Exception as e:
+            result = "Error: " + str(e).split("Stack trace:")[0]
+            print(result)
+            phase.update_history("system", result)
+
+    return phase.result
+
+
 def make_ai_response(
     app: App, body: dict[str, dict[str, str]], context: dict[str, str], openai: Any
 ) -> None:
@@ -218,36 +280,37 @@ def make_ai_response(
         )
         reply_message_ts = slack_resp["message"]["ts"]
 
-        conversation_messages = app.client.conversations_replies(
+        conversation = app.client.conversations_replies(
             channel=channel_id, ts=thread_ts, inclusive=True
         )["messages"]
-        messages = process_conversation_messages(conversation_messages, bot_user_id)
+        messages = process_conversation(conversation, bot_user_id)
 
         num_tokens = num_tokens_from_messages(messages)
         print(f"Number of tokens: {num_tokens}")  # noqa: T201
 
         last_msg = messages[-1]
         last_msg_content = last_msg["content"]
-        left_part = last_msg_content.split(" ")[0]
-        right_part = last_msg_content.split(" ")[-1]
+        maybe_command = last_msg_content.split(" ")[0]
+        maybe_short_name = last_msg_content.split(" ")[-1]
 
-        if right_part in projects_shortnames:
+        if maybe_short_name in projects_shortnames:
             project_id = next(
-                iter(
-                    filter(
-                        lambda project: project["shortName"].lower() == right_part,
-                        projects,
-                    )
-                )
+                [
+                    project
+                    for project in projects
+                    if project["shortName"].lower() == maybe_short_name
+                ]
             )["id"]
         else:
             project_id = "43-46"
 
-        if (last_msg["role"] == "user") & (left_part == YT_COMMAND):
+        if (last_msg["role"] == "user") & (maybe_command == YT_COMMAND):
             messages.pop()  # remove YT_COMMAND
             response_text = submit_issue(
                 messages=messages, openai=openai, project_id=project_id
             )
+        elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
+            response_text = generate_sql(last_msg_content[len(SQL_COMMAND) + 2:])
         else:
             openai_response = openai.ChatCompletion.create(
                 model=MODEL, messages=messages

@@ -23,13 +23,8 @@ dev_shots = [
     {"role": "user", "content": shots["users_part"]},
     {"role": "assistant", "content": shots["users_part.sql"]},
 ]
-problem = [
-    {
-        "role": "user",
-        "content": "How much time users need to subscribe?",
-    },
-]
-testing_funcs = [functions["run_query"]]
+problem = "How much time users need to subscribe?"
+testing_funcs = [json.loads(functions["run_query"])]
 phases = {
     "developing": Phase(
         name="developing",
@@ -45,6 +40,7 @@ phases = {
 
 
 phase = phases["developing"]
+phase.update_history("user", problem)
 phase.result = assistant.get_completion(
     messages=phases["developing"].history,
 )
@@ -65,6 +61,8 @@ for _ in range(3):
         phase.result = str(
             ch_client.execute(json.loads(response, strict=False)["sql_query"])
         )
+        print(phase.result)
+        break
 
     except Exception as e:
         result = "Error: " + str(e).split("Stack trace:")[0]
