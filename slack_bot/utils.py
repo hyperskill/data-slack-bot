@@ -310,7 +310,7 @@ def make_ai_response(
                 messages=messages, openai=openai, project_id=project_id
             )
         elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
-            response_text = generate_sql(last_msg_content[len(SQL_COMMAND) + 2:])
+            response_text = generate_sql(last_msg_content[len(SQL_COMMAND) + 2 :])
         else:
             openai_response = openai.ChatCompletion.create(
                 model=MODEL, messages=messages
