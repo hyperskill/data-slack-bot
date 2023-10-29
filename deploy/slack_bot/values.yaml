@@ -28,4 +28,4 @@ youtrack:
 clickhouse:
   host: secret
   user: secret
-  password: secret
+  pass: secret

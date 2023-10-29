@@ -110,4 +110,4 @@ jobs:
           --set youtrack.apiToken=${{ secrets.YT_API_TOKEN }} \
           --set clickhouse.host=${{ secrets.CLICKHOUSE_HOST }} \
           --set clickhouse.user=${{ secrets.CLICKHOUSE_USER }} \
-          --set clickhouse.password=${{ secrets.CLICKHOUSE_PASSWORD }}
+          --set clickhouse.pass=${{ secrets.CLICKHOUSE_PASSWORD }}
