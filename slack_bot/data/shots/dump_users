@@ -1,0 +1,7 @@
+Please provide user contacts and info (email, ID, current track, if ever solved a stage) for a short survey:
+a) Not staff and not superusers;
+b) Is_testee = 1;
+c) Not from Russia, Belarus or Ukraine (filter by info in JetSales and country_by_ip_id);
+d) Solved at least 1 problem in the past two weeks;
+e) Solved at least 1 topic overall;
+f) TALG Experience = "I've learned to program before, and now I'm using it professionally" AND TALG Motivation = "I just want to expand my knowledge / get more practice".

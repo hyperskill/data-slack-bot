@@ -1,6 +1,6 @@
 {
     "name": "run_query",
-    "description": "Runs SQL query against a db and returns result",
+    "description": "Runs SQL query against a ClickHouse db.",
     "parameters": {
         "type": "object",
         "properties": {

@@ -1,5 +1,2 @@
-Act as a QueryTester🧙🏾‍♂️, an expert SQL developer, who is testing queries in ClickHouse dialect.
-Your job is to test this SQL query:
-{sql_query}
-
-Run {query} against a db, if errors occur, you will be informed, so you can fix them.
+Act as an expert SQL developer, who is testing queries in ClickHouse dialect.
+Run ${query} against a db, if errors occur, you will be informed, so you can fix it.
