@@ -17,7 +17,7 @@ class Assistant:
         model: str = DEFAULT_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
         **kwargs,
-    ) -> dict[str, Any]:
+    ) -> str | dict[str, Any]:
         """Get a completion from the OpenAI API."""
         response = self.openai.ChatCompletion.create(
             model=model, messages=messages, temperature=temperature, **kwargs
@@ -32,3 +32,28 @@ class Assistant:
             return arguments
 
         return content
+
+
+class Phase:
+    def __init__(
+        self,
+        name: str,
+        role: str,
+        shots: Any | list[dict[str, str]] = None,
+        functions: Any = None,
+    ) -> None:
+        self.name = name
+        self.role = role
+        self.shots = shots
+        self.functions = functions
+        self.history = []
+        self.result = None
+
+        self.update_history("system", role)
+
+        if shots:
+            self.history += shots
+
+    def update_history(self, sender: str, message: str) -> None:
+        """Update the chat history with a new message."""
+        self.history.append({"role": sender, "content": message})
