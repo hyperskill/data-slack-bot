@@ -1,4 +1,3 @@
---
 WITH
 
 users AS (
