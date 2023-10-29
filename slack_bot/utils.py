@@ -12,9 +12,9 @@ from dotenv import load_dotenv
 from trafilatura import extract, fetch_url
 from trafilatura.settings import use_config
 
+from assistant import Assistant, Phase
+from clickhouse import ClickHouse
 from db import DB
-from slack_bot.assistant import Assistant, Phase
-from slack_bot.clickhouse import ClickHouse
 from youtrack import YouTrack
 
 load_dotenv()
@@ -35,7 +35,7 @@ data = DB(Path(__file__).parent / "data")
 prompts = DB(Path(__file__).parent / "data" / "prompts")
 templates = DB(Path(__file__).parent / "data" / "templates")
 functions = DB(Path(__file__).parent / "data" / "functions")
-shots = DB(Path(__file__).parent.parent / "data" / "shots")
+shots = DB(Path(__file__).parent / "data" / "shots")
 
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
@@ -210,7 +210,6 @@ def submit_issue(messages: list[dict[str, str]], openai: Any, project_id: str) -
 
 
 def generate_sql(problem: str) -> str:
-    print(problem)
     assistant = Assistant(os.environ.get("OPENAI_API_KEY"))
     ch_client = ClickHouse().client
 
@@ -220,7 +219,7 @@ def generate_sql(problem: str) -> str:
         {"role": "user", "content": shots["users_part"]},
         {"role": "assistant", "content": shots["users_part.sql"]},
     ]
-    testing_funcs = [json.loads(functions["run_query"])]
+    testing_funcs = [json.loads(functions["run_query"])]  # type: ignore[arg-type]
     phases = {
         "developing": Phase(
             name="developing",
@@ -236,14 +235,12 @@ def generate_sql(problem: str) -> str:
 
     phase = phases["developing"]
     phase.update_history("user", problem)
-    phase.result = assistant.get_completion(
+    phase.result = assistant.get_completion(  # type: ignore[assignment]
         messages=phases["developing"].history,
     )
 
-    print(phase.result)
-
     phase = phases["testing"]
-    phase.update_history("user", phases["developing"].result)
+    phase.update_history("user", phases["developing"].result)  # type: ignore[arg-type]
 
     for _ in range(3):
         try:
@@ -252,19 +249,15 @@ def generate_sql(problem: str) -> str:
                 functions=phase.functions,
                 function_call={"name": "run_query"},
             )
-
-            phase.result = str(
-                ch_client.execute(json.loads(response, strict=False)["sql_query"])
-            )
-            print(phase.result)
+            query = json.loads(response, strict=False)["sql_query"]  # type: ignore[arg-type]  # noqa: E501
+            ch_client.execute(query)
             break
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             result = "Error: " + str(e).split("Stack trace:")[0]
-            print(result)
             phase.update_history("system", result)
 
-    return phase.result
+    return f"```{query or result}```"
 
 
 def make_ai_response(
@@ -294,7 +287,7 @@ def make_ai_response(
         maybe_short_name = last_msg_content.split(" ")[-1]
 
         if maybe_short_name in projects_shortnames:
-            project_id = next(
+            project_id = next(  # type: ignore[call-overload]
                 [
                     project
                     for project in projects
@@ -310,7 +303,7 @@ def make_ai_response(
                 messages=messages, openai=openai, project_id=project_id
             )
         elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
-            response_text = generate_sql(last_msg_content[len(SQL_COMMAND) + 2 :])
+            response_text = generate_sql(last_msg_content[len(SQL_COMMAND) + 1 :])
         else:
             openai_response = openai.ChatCompletion.create(
                 model=MODEL, messages=messages

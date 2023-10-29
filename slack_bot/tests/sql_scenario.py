@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path
@@ -45,7 +47,7 @@ phase.result = assistant.get_completion(
     messages=phases["developing"].history,
 )
 
-print(phase.result)
+print(phase.result)  # noqa: T201
 
 phase = phases["testing"]
 phase.update_history("user", phases["developing"].result)
@@ -61,10 +63,10 @@ for _ in range(3):
         phase.result = str(
             ch_client.execute(json.loads(response, strict=False)["sql_query"])
         )
-        print(phase.result)
+        print(phase.result)  # noqa: T201
         break
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         result = "Error: " + str(e).split("Stack trace:")[0]
-        print(result)
+        print(result)  # noqa: T201
         phase.update_history("system", result)

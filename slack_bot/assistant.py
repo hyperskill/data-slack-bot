@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 import openai
@@ -7,7 +9,7 @@ DEFAULT_TEMPERATURE = 0
 
 
 class Assistant:
-    def __init__(self, api_token: str) -> None:
+    def __init__(self, api_token: str | Any) -> None:
         self.openai = openai
         self.openai.api_key = api_token
 
@@ -19,7 +21,7 @@ class Assistant:
         **kwargs,
     ) -> str | dict[str, Any]:
         """Get a completion from the OpenAI API."""
-        response = self.openai.ChatCompletion.create(
+        response = self.openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
             model=model, messages=messages, temperature=temperature, **kwargs
         )
 
@@ -38,7 +40,7 @@ class Phase:
     def __init__(
         self,
         name: str,
-        role: str,
+        role: str | Any,
         shots: Any | list[dict[str, str]] = None,
         functions: Any = None,
     ) -> None:
@@ -46,7 +48,7 @@ class Phase:
         self.role = role
         self.shots = shots
         self.functions = functions
-        self.history = []
+        self.history: list[dict[str, str]] = []
         self.result = None
 
         self.update_history("system", role)
