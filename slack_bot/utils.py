@@ -287,12 +287,10 @@ def make_ai_response(
         maybe_short_name = last_msg_content.split(" ")[-1]
 
         if maybe_short_name in projects_shortnames:
-            project_id = next(  # type: ignore[call-overload]
-                [
-                    project
-                    for project in projects
-                    if project["shortName"].lower() == maybe_short_name
-                ]
+            project_id = next(
+                project
+                for project in projects
+                if project["shortName"].lower() == maybe_short_name
             )["id"]
         else:
             project_id = "43-46"
