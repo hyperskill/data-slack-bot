@@ -11,6 +11,7 @@ Rules:
 -ALWAYS USE `date` column filter with `hyperskill.content` table
 -Don't use `CASE`, use if() or multiIf() instead
 -Don't use `COUNT(DISTINCT {column})` use `uniqExact({column})` instead
+-Don't compare `Datetime` with `Date` use `toDate({datetime})` instead
 
 Available tables:
   -`hyperskill.content` – events mart, contains information about user actions (events)
@@ -29,11 +30,11 @@ Available tables:
     -`page` – /route/to/page
     -`target` – filling only if action IN ("click", "view", "show"), contains names of buttons mostly (e.g. "open" ...)
     -`is_guest` – is user guest (0, 1)
-    -`dt_registered` – datetime of registration
+    -`dt_registered` – registration datetime (e.g. '2023-01-01 00:00:00')
 )
   -`hyperskill_private.users` – users mart, contains user properties
     -`user_id` – user id
-    -`date_registered` – date of registration
+    -`date_registered` – registration datetime (e.g. '2023-01-01 00:00:00')
     -`country_by_ip_id` – country id by ip
     -`email` – user email
     -`country` – current user country (e.g. "United States", "Russia", "Germany", "Poland" ...)
