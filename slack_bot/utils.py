@@ -278,8 +278,28 @@ def make_ai_response(
         )["messages"]
         messages = process_conversation(conversation, bot_user_id)
 
+        # remove warning messages
+        messages = [
+            message
+            for message in messages
+            if not (message["content"].split(" ")[0] == "Sorry,")
+            & (message["content"].split(" ")[-1] == "ignored.")
+        ]
+
         num_tokens = num_tokens_from_messages(messages)
-        print(f"Number of tokens: {num_tokens}")  # noqa: T201
+        # print(f"Number of tokens: {num_tokens}")  # noqa: ERA001
+
+        if num_tokens > MAX_TOKENS * 0.95:
+            app.client.chat_postMessage(
+                channel=channel_id,
+                thread_ts=thread_ts,
+                text=f"Sorry, you are using more than 95 % of tokens limit: "
+                f"{num_tokens} / {MAX_TOKENS * 0.95}.\n"
+                f"Some of the oldest messages will be ignored.",
+            )
+
+        while num_tokens_from_messages(messages) > MAX_TOKENS * 0.95:
+            messages.pop(0)
 
         last_msg = messages[-1]
         last_msg_content = last_msg["content"]
