@@ -83,18 +83,18 @@ def num_tokens_from_messages(
         encoding = tiktoken.get_encoding("cl100k_base")
 
     if model == "gpt-3.5-turbo":
-        print(  # noqa: T201
-            "Warning: gpt-3.5-turbo may change over time. "
-            "Returning num tokens assuming gpt-3.5-turbo-0301."
-        )
+        # print(  # noqa: T201, ERA001
+        #     "Warning: gpt-3.5-turbo may change over time. "  # noqa: ERA001
+        #     "Returning num tokens assuming gpt-3.5-turbo-0301."  # noqa: ERA001
+        # )  # noqa: ERA001
 
         return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0301")
 
     elif model == "gpt-4":  # noqa: RET505
-        print(  # noqa: T201
-            "Warning: gpt-4 may change over time. "
-            "Returning num tokens assuming gpt-4-0314."
-        )
+        # print(  # noqa: T201
+        #     "Warning: gpt-4 may change over time. "  # noqa: ERA001
+        #     "Returning num tokens assuming gpt-4-0314."  # noqa: ERA001
+        # )  # noqa: ERA001
 
         return num_tokens_from_messages(messages, model="gpt-4-0314")
 
@@ -158,13 +158,16 @@ def process_conversation(
     for message in conversation_messages:
         cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
 
-        if cleaned_message in projects_shortnames:
-            template = templates[cleaned_message] or templates[AN_COMMAND]
+        if cleaned_message in [*projects_shortnames, YT_COMMAND]:
+            template = templates[cleaned_message] or templates[YT_COMMAND]
 
             system = prompts["clarification"].replace(  # type: ignore[union-attr]
                 "{{template}}", template  # type: ignore[arg-type]
             )
             messages.append({"role": "system", "content": system})
+
+            if cleaned_message == YT_COMMAND:
+                messages.append({"role": "user", "content": cleaned_message})
             continue
 
         role = "assistant" if message["user"] == bot_user_id else "user"
