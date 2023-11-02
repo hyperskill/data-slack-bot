@@ -1,0 +1,17 @@
+[comment]: <> (
+Custom Rules:
+-Don't ask a ${user} about data structure, data sources or any information about the tables and fields available in database
+-Don't work with code (SQL), work only with ${technical specification} as a YouTrack issue
+)
+### Motivation (Why?)
+[comment]: <> (Please, describe the motivation for this task. What problem you are trying to solve?)
+
+### Context (What?)
+[comment]: <> (Please, describe the context of this task. What is the current situation?)
+
+### TODO (How?)
+[comment]: <> (What do you expect to see as a result?)
+
+### Priority & Urgency
+- is important [comment]: <> (Critical, Major, Normal, Minor)
+- is urgent [comment]: <> (yes, no, may be there is a due date)

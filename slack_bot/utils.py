@@ -83,18 +83,18 @@ def num_tokens_from_messages(
         encoding = tiktoken.get_encoding("cl100k_base")
 
     if model == "gpt-3.5-turbo":
-        print(  # noqa: T201
-            "Warning: gpt-3.5-turbo may change over time. "
-            "Returning num tokens assuming gpt-3.5-turbo-0301."
-        )
+        # print(  # noqa: T201, ERA001
+        #     "Warning: gpt-3.5-turbo may change over time. "  # noqa: ERA001
+        #     "Returning num tokens assuming gpt-3.5-turbo-0301."  # noqa: ERA001
+        # )  # noqa: ERA001
 
         return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0301")
 
     elif model == "gpt-4":  # noqa: RET505
-        print(  # noqa: T201
-            "Warning: gpt-4 may change over time. "
-            "Returning num tokens assuming gpt-4-0314."
-        )
+        # print(  # noqa: T201
+        #     "Warning: gpt-4 may change over time. "  # noqa: ERA001
+        #     "Returning num tokens assuming gpt-4-0314."  # noqa: ERA001
+        # )  # noqa: ERA001
 
         return num_tokens_from_messages(messages, model="gpt-4-0314")
 
@@ -154,12 +154,14 @@ def process_conversation(
 ) -> list[dict[str, str]]:
     conversation_messages.pop()  # remove WAIT_MESSAGE
     messages: list[dict[str, str]] = []
+    """Transforms Slack messages into an openai API messages. 
+    Also, it inserts system message for clarification or YouTrack issue submission scenarios."""
 
     for message in conversation_messages:
         cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
 
         if cleaned_message in projects_shortnames:
-            template = templates[cleaned_message] or templates[AN_COMMAND]
+            template = templates[cleaned_message] or templates[YT_COMMAND]
 
             system = prompts["clarification"].replace(  # type: ignore[union-attr]
                 "{{template}}", template  # type: ignore[arg-type]
@@ -278,25 +280,55 @@ def make_ai_response(
         )["messages"]
         messages = process_conversation(conversation, bot_user_id)
 
+        # remove warning messages
+        messages = [
+            message
+            for message in messages
+            if not (message["content"].split(" ")[0] == "Sorry,")
+            & (message["content"].split(" ")[-1] == "ignored.")
+        ]
+
         num_tokens = num_tokens_from_messages(messages)
-        print(f"Number of tokens: {num_tokens}")  # noqa: T201
+        # print(f"Number of tokens: {num_tokens}")  # noqa: ERA001
+
+        if num_tokens > MAX_TOKENS * 0.95:
+            app.client.chat_postMessage(
+                channel=channel_id,
+                thread_ts=thread_ts,
+                text=f"Sorry, you are using more than 95 % of tokens limit: "
+                f"{num_tokens} / {MAX_TOKENS * 0.95}.\n"
+                f"Some of the oldest messages will be ignored.",
+            )
+
+        while num_tokens_from_messages(messages) > MAX_TOKENS * 0.95:
+            messages.pop(0)
 
         last_msg = messages[-1]
         last_msg_content = last_msg["content"]
         maybe_command = last_msg_content.split(" ")[0]
-        maybe_short_name = last_msg_content.split(" ")[-1]
-
-        if maybe_short_name in projects_shortnames:
-            project_id = next(
-                project
-                for project in projects
-                if project["shortName"].lower() == maybe_short_name
-            )["id"]
-        else:
-            project_id = "43-46"
 
         if (last_msg["role"] == "user") & (maybe_command == YT_COMMAND):
+            maybe_short_name = last_msg_content.split(" ")[-1]
+
+            if maybe_short_name in projects_shortnames:
+                project_id = next(
+                    project
+                    for project in projects
+                    if project["shortName"].lower() == maybe_short_name
+                )["id"]
+            else:
+                project_id = "43-46"
+
+            template = templates[maybe_short_name] or templates[YT_COMMAND]
             messages.pop()  # remove YT_COMMAND
+            messages.append(
+                {
+                    "role": "system",
+                    "content": prompts["clarification"].replace(
+                        "{{template}}", template  # type: ignore[arg-type]
+                    ),
+                }
+            )
             response_text = submit_issue(
                 messages=messages, openai=openai, project_id=project_id
             )
