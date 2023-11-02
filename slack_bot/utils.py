@@ -83,18 +83,16 @@ def num_tokens_from_messages(
         encoding = tiktoken.get_encoding("cl100k_base")
 
     if model == "gpt-3.5-turbo":
-        # print(  # noqa: T201, ERA001
+        # print(
         #     "Warning: gpt-3.5-turbo may change over time. "  # noqa: ERA001
         #     "Returning num tokens assuming gpt-3.5-turbo-0301."  # noqa: ERA001
-        # )  # noqa: ERA001
 
         return num_tokens_from_messages(messages, model="gpt-3.5-turbo-0301")
 
     elif model == "gpt-4":  # noqa: RET505
-        # print(  # noqa: T201
+        # print(
         #     "Warning: gpt-4 may change over time. "  # noqa: ERA001
         #     "Returning num tokens assuming gpt-4-0314."  # noqa: ERA001
-        # )  # noqa: ERA001
 
         return num_tokens_from_messages(messages, model="gpt-4-0314")
 
@@ -154,8 +152,9 @@ def process_conversation(
 ) -> list[dict[str, str]]:
     conversation_messages.pop()  # remove WAIT_MESSAGE
     messages: list[dict[str, str]] = []
-    """Transforms Slack messages into an openai API messages. 
-    Also, it inserts system message for clarification or YouTrack issue submission scenarios."""
+    """Transforms Slack messages into an openai API messages.
+    Also, it inserts system message for clarification or YouTrack
+    issue submission scenarios."""
 
     for message in conversation_messages:
         cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
@@ -324,7 +323,9 @@ def make_ai_response(
             messages.append(
                 {
                     "role": "system",
-                    "content": prompts["clarification"].replace(
+                    "content": prompts[
+                        "clarification"
+                    ].replace(  # type: ignore[union-attr]
                         "{{template}}", template  # type: ignore[arg-type]
                     ),
                 }
