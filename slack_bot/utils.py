@@ -154,20 +154,19 @@ def process_conversation(
 ) -> list[dict[str, str]]:
     conversation_messages.pop()  # remove WAIT_MESSAGE
     messages: list[dict[str, str]] = []
+    """Transforms Slack messages into an openai API messages. 
+    Also, it inserts system message for clarification or YouTrack issue submission scenarios."""
 
     for message in conversation_messages:
         cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
 
-        if cleaned_message in [*projects_shortnames, YT_COMMAND]:
+        if cleaned_message in projects_shortnames:
             template = templates[cleaned_message] or templates[YT_COMMAND]
 
             system = prompts["clarification"].replace(  # type: ignore[union-attr]
                 "{{template}}", template  # type: ignore[arg-type]
             )
             messages.append({"role": "system", "content": system})
-
-            if cleaned_message == YT_COMMAND:
-                messages.append({"role": "user", "content": cleaned_message})
             continue
 
         role = "assistant" if message["user"] == bot_user_id else "user"
@@ -307,19 +306,29 @@ def make_ai_response(
         last_msg = messages[-1]
         last_msg_content = last_msg["content"]
         maybe_command = last_msg_content.split(" ")[0]
-        maybe_short_name = last_msg_content.split(" ")[-1]
-
-        if maybe_short_name in projects_shortnames:
-            project_id = next(
-                project
-                for project in projects
-                if project["shortName"].lower() == maybe_short_name
-            )["id"]
-        else:
-            project_id = "43-46"
 
         if (last_msg["role"] == "user") & (maybe_command == YT_COMMAND):
+            maybe_short_name = last_msg_content.split(" ")[-1]
+
+            if maybe_short_name in projects_shortnames:
+                project_id = next(
+                    project
+                    for project in projects
+                    if project["shortName"].lower() == maybe_short_name
+                )["id"]
+            else:
+                project_id = "43-46"
+
+            template = templates[maybe_short_name] or templates[YT_COMMAND]
             messages.pop()  # remove YT_COMMAND
+            messages.append(
+                {
+                    "role": "system",
+                    "content": prompts["clarification"].replace(
+                        "{{template}}", template  # type: ignore[arg-type]
+                    ),
+                }
+            )
             response_text = submit_issue(
                 messages=messages, openai=openai, project_id=project_id
             )
