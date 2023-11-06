@@ -39,7 +39,7 @@ shots = DB(Path(__file__).parent / "data" / "shots")
 
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
-MODEL = "gpt-4"
+MODEL = "gpt-4-1106-preview"  # "gpt-4"
 projects = json.loads(data["yt_projects.json"])  # type: ignore[arg-type]
 projects_shortnames = [project["shortName"].lower() for project in projects]
 AN_COMMAND = "an"

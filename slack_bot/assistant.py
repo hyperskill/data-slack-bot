@@ -4,7 +4,7 @@ from typing import Any
 
 import openai
 
-DEFAULT_MODEL = "gpt-4"  # "gpt-3.5-turbo"
+DEFAULT_MODEL = "gpt-4-1106-preview"  # "gpt-3.5-turbo"
 DEFAULT_TEMPERATURE = 0.1
 
 
