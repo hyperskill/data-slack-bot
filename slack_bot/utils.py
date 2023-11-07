@@ -7,6 +7,7 @@ import traceback
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
+import openai
 import tiktoken
 from dotenv import load_dotenv
 from trafilatura import extract, fetch_url
@@ -39,13 +40,16 @@ shots = DB(Path(__file__).parent / "data" / "shots")
 
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
-MODEL = "gpt-4-1106-preview"  # "gpt-4"
+BEST_MODEL = "gpt-4-1106-preview"
+MODEL = "gpt-4"
 projects = json.loads(data["yt_projects.json"])  # type: ignore[arg-type]
 projects_shortnames = [project["shortName"].lower() for project in projects]
 AN_COMMAND = "an"
 YT_COMMAND = "yt"
 SQL_COMMAND = "sql"
 YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
+
+openai.api_key = OPENAI_API_KEY
 
 
 def extract_url_list(text: str) -> list[str] | None:
@@ -177,10 +181,10 @@ def process_conversation(
     return messages
 
 
-def submit_issue(messages: list[dict[str, str]], openai: Any, project_id: str) -> str:
+def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) -> str:
     funcs = [json.loads(functions["create_issue"])]  # type: ignore[arg-type]
-    openai_response = openai.ChatCompletion.create(
-        model=MODEL,
+    openai_response = openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
+        model=model,
         messages=messages,
         functions=funcs,
         function_call={"name": "create_issue"},
@@ -210,7 +214,7 @@ def submit_issue(messages: list[dict[str, str]], openai: Any, project_id: str) -
     return f"{YT_BASE_URL}/issue/{response_text['id']}"
 
 
-def generate_sql(problem: str) -> str:
+def generate_sql(problem: str, model: str) -> str:
     assistant = Assistant(os.environ.get("OPENAI_API_KEY"))
     ch_client = ClickHouse().client
 
@@ -220,49 +224,55 @@ def generate_sql(problem: str) -> str:
         {"role": "user", "content": shots["users_part"]},
         {"role": "assistant", "content": shots["users_part.sql"]},
     ]
-    testing_funcs = [json.loads(functions["run_query"])]  # type: ignore[arg-type]
+    funcs = [json.loads(functions["run_query.json"])]  # type: ignore[arg-type]
     phases = {
         "developing": Phase(
             name="developing",
             role=prompts["developing"],
             shots=dev_shots,
+            functions=funcs,
         ),
         "testing": Phase(
             name="testing",
             role=prompts["testing"],
-            functions=testing_funcs,
+            functions=funcs,
         ),
     }
 
+    # developing phase
     phase = phases["developing"]
     phase.update_history("user", problem)
-    phase.result = assistant.get_completion(  # type: ignore[assignment]
+    completion = assistant.get_completion(
+        model=model,
         messages=phases["developing"].history,
+        functions=phase.functions,
+        function_call={"name": "run_query"},
     )
+    phase.result = json.loads(completion, strict=False)["sql_query"]  # type: ignore[arg-type]  # noqa: E501
 
-    phase = phases["testing"]
-    phase.update_history("user", phases["developing"].result)  # type: ignore[arg-type]
-
-    for _ in range(3):
-        try:
-            response = assistant.get_completion(
-                messages=phase.history,
-                functions=phase.functions,
-                function_call={"name": "run_query"},
-            )
-            query = json.loads(response, strict=False)["sql_query"]  # type: ignore[arg-type]  # noqa: E501
-            ch_client.execute(query)
-            break
-
-        except Exception as e:  # noqa: BLE001
-            result = "Error: " + str(e).split("Stack trace:")[0]
-            phase.update_history("system", result)
-
-    return f"```{query or result}```"
+    try:
+        ch_client.execute(phase.result)
+    except Exception as e:  # noqa: BLE001
+        result = "Error: " + str(e).split("Stack trace:")[0]
+        print(result)  # noqa: T201
+        return (
+            f"I am sorry, but I can't execute resulted query. Encountered an error:\n"
+            f"```{result}```\n"
+            f"```{phase.result}```"
+        )
+    else:
+        return (
+            f"Please, pay attention, that I am only a bot and I can't guarantee "
+            f"that the resulted query is correct. Please, check it manually.\n"
+            f"```{phase.result}```"
+        )
 
 
 def make_ai_response(
-    app: App, body: dict[str, dict[str, str]], context: dict[str, str], openai: Any
+    app: App,
+    body: dict[str, dict[str, str]],
+    context: dict[str, str],
+    model: str = BEST_MODEL,
 ) -> None:
     try:
         channel_id = body["event"]["channel"]
@@ -331,15 +341,18 @@ def make_ai_response(
                 }
             )
             response_text = submit_issue(
-                messages=messages, openai=openai, project_id=project_id
+                messages=messages, project_id=project_id, model=model
             )
         elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
-            response_text = generate_sql(last_msg_content[len(SQL_COMMAND) + 1 :])
-        else:
-            openai_response = openai.ChatCompletion.create(
-                model=MODEL, messages=messages
+            response_text = generate_sql(
+                problem=last_msg_content[len(SQL_COMMAND) + 1 :],
+                model=model,
             )
-            response_text = openai_response.choices[0].message["content"]
+        else:
+            completion = openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
+                model=model, messages=messages
+            )
+            response_text = completion.choices[0].message["content"]
 
         app.client.chat_update(
             channel=channel_id, ts=reply_message_ts, text=response_text
@@ -352,3 +365,10 @@ def make_ai_response(
             text=f"I can't provide a response. Encountered an error:\n`\n{e}\n`",
         )
         traceback.print_exc()
+
+
+def run_with_the_best_model(**kwargs) -> None:
+    try:
+        make_ai_response(**kwargs)
+    except Exception:  # noqa: BLE001
+        make_ai_response(model=MODEL, **kwargs)
