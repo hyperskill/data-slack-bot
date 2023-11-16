@@ -27,7 +27,7 @@ Available tables:
     -`target` – filling only if action IN ("click", "view", "show"), contains names of buttons mostly (e.g. "open" ...)
     -`is_guest` – is user guest (0, 1)
     -`dt_registered` – registration datetime (e.g. '2023-01-01 00:00:00')
-)
+
   -`hyperskill_private.users` – users mart, contains user properties
     -`user_id` – user id
     -`date_registered` – registration datetime (e.g. '2023-01-01 00:00:00')
