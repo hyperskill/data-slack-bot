@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import openai
+
+if TYPE_CHECKING:
+    from openai.openai_object import OpenAIObject
 
 DEFAULT_MODEL = "gpt-4-1106-preview"  # "gpt-3.5-turbo"
 DEFAULT_TEMPERATURE = 0.1
@@ -21,7 +24,7 @@ class Assistant:
         **kwargs,
     ) -> str | dict[str, Any]:
         """Get a completion from the OpenAI API."""
-        response = self.openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
+        response: OpenAIObject = self.openai.ChatCompletion.create(  # type: ignore[no-untyped-call] # noqa: E501
             model=model, messages=messages, temperature=temperature, **kwargs
         )
         content = response.choices[0].message["content"]

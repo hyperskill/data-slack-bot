@@ -22,6 +22,7 @@ load_dotenv()
 
 
 if TYPE_CHECKING:
+    from openai.openai_object import OpenAIObject
     from slack_bolt import App
 
 newconfig = use_config()
@@ -53,6 +54,15 @@ openai.api_key = OPENAI_API_KEY
 
 
 def extract_url_list(text: str) -> list[str] | None:
+    """Extracts a list of URLs from the given text.
+
+    Args:
+        text (str): The text to extract URLs from.
+
+    Returns:
+        list[str] | None: A list of URLs found in the text,
+        or None if no URLs were found.
+    """
     url_pattern = re.compile(
         r"<(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)>"
     )
@@ -62,6 +72,15 @@ def extract_url_list(text: str) -> list[str] | None:
 
 
 def augment_user_message(user_message: str, url_list: list[str]) -> str:
+    """Augments the user's message with urls content.
+
+    Args:
+        user_message (str): The user's message.
+        url_list (list[str]): A list of URLs in the user's message.
+
+    Returns:
+        str: The augmented message with the content of the URLs appended to it.
+    """
     all_url_content = ""
 
     for url in url_list:
@@ -79,7 +98,21 @@ def augment_user_message(user_message: str, url_list: list[str]) -> str:
 def num_tokens_from_messages(
     messages: list[dict[str, str]], model: str = "gpt-4"
 ) -> Any:
-    """Returns the number of tokens used by a list of messages."""
+    """Returns the number of tokens used by a list of messages.
+
+    Args:
+        messages (list[dict[str, str]]): A list of messages, where each message is
+        a dictionary with keys "name" and "content".
+        model (str, optional): The name of the GPT model to use for tokenization.
+            Defaults to "gpt-4".
+
+    Returns:
+        The total number of tokens used by the messages, including special tokens
+        like <|start|> and <|end|>.
+
+    Raises:
+        NotImplementedError: If the specified model is not supported.
+    """
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
@@ -133,6 +166,16 @@ def num_tokens_from_messages(
 
 
 def clean_message_text(message_text: str, role: str, bot_user_id: str) -> str:
+    """Remove the bot user ID and leading/trailing whitespaces.
+
+    Args:
+        message_text (str): The text of the message to clean.
+        role (str): The role of the user sending the message.
+        bot_user_id (str): The ID of the bot user.
+
+    Returns:
+        str: The cleaned message text.
+    """
     if (f"<@{bot_user_id}>" in message_text) or (role == "assistant"):
         message_text = message_text.replace(f"<@{bot_user_id}>", "").strip()
 
@@ -140,6 +183,16 @@ def clean_message_text(message_text: str, role: str, bot_user_id: str) -> str:
 
 
 def process_message(message: dict[str, str], bot_user_id: str, role: str) -> str:
+    """Processes a message received by the Slack bot.
+
+    Args:
+        message (dict[str, str]): The message received by the bot.
+        bot_user_id (str): The ID of the bot user.
+        role (str): The role of the user sending the message.
+
+    Returns:
+        str: The processed message text.
+    """
     message_text = message["text"]
 
     if role == "user":
@@ -152,6 +205,20 @@ def process_message(message: dict[str, str], bot_user_id: str, role: str) -> str
 
 
 def coock_prompt(prompt: Any[str, None], replacement: Any[str, None]) -> str:
+    """Replaces '{{template}}' in the given prompt with the provided string.
+
+    Args:
+        prompt (str or None): The prompt string to replace the placeholder in.
+        replacement (str or None): The string to replace the '{{template}}'
+        placeholder with.
+
+    Returns:
+        str: The prompt string with the '{{template}}' placeholder replaced with
+        the provided replacement string.
+
+    Raises:
+        Exception: If either the prompt or replacement argument is missing.
+    """
     if prompt and replacement:
         return prompt.replace("{{template}}", replacement)
 
@@ -161,11 +228,22 @@ def coock_prompt(prompt: Any[str, None], replacement: Any[str, None]) -> str:
 def process_conversation(
     conversation_messages: list[dict[str, str]], bot_user_id: str
 ) -> list[dict[str, str]]:
+    """Transforms Slack messages into an openai API messages.
+
+    Args:
+        conversation_messages (list[dict[str, str]]): A list of messages exchanged
+        between the user and the bot.
+        bot_user_id (str): The ID of the bot user.
+
+    Returns:
+        list[dict[str, str]]: A list of messages exchanged between the user and
+        the bot, transformed into an openai API format.
+
+    Also, it inserts system message for clarification or YouTrack issue
+    submission scenarios.
+    """
     conversation_messages.pop()  # remove WAIT_MESSAGE
     messages: list[dict[str, str]] = []
-    """Transforms Slack messages into an openai API messages.
-    Also, it inserts system message for clarification or YouTrack
-    issue submission scenarios."""
 
     for message in conversation_messages:
         cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
@@ -189,6 +267,18 @@ def process_conversation(
 
 
 def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) -> str:
+    """Submits a YouTrack issue based on the given messages, project ID, and model.
+
+    Args:
+        messages (list[dict[str, str]]): The messages to use for generating
+        the issue summary and description.
+        project_id (str): The ID of the YouTrack project to submit the issue to.
+        model (str): The name of the OpenAI model to use for generating
+        the issue summary and description.
+
+    Returns:
+        str: The URL of the created YouTrack issue.
+    """
     func = json.loads(functions["create_issue"] or "{}")
     openai_response = openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
         model=model,
@@ -218,6 +308,18 @@ def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) ->
 
 
 def generate_sql(problem: str, model: str) -> str:
+    """Generates SQL query based on the provided problem statement and OpenAI model.
+
+    Args:
+        problem (str): The problem statement to generate SQL query for.
+        model (str): The name of the OpenAI model to use for generating SQL query.
+
+    Returns:
+        str: The generated SQL query.
+
+    Raises:
+        Exception: If there was an error executing the generated SQL query.
+    """
     assistant = Assistant(os.environ.get("OPENAI_API_KEY"))
     ch_client = ClickHouse().client
 
@@ -280,16 +382,27 @@ def make_ai_response(
     context: dict[str, str],
     model: str = BEST_MODEL,
 ) -> None:
-    try:
-        channel_id = body["event"]["channel"]
-        thread_ts = body["event"].get("thread_ts", body["event"]["ts"])
-        bot_user_id = context["bot_user_id"]
+    """Generates an AI response to a user message in a Slack channel.
 
+    Args:
+        app (slack_bolt.App): The Slack app instance.
+        body (dict[str, dict[str, str]]): The request body from the Slack API.
+        context (dict[str, str]): The context of the Slack bot.
+        model (str, optional): The name of the OpenAI GPT-3 model to use.
+        Defaults to BEST_MODEL.
+
+    Returns:
+        None
+    """
+    channel_id = body["event"]["channel"]
+    thread_ts = body["event"].get("thread_ts", body["event"]["ts"])
+    bot_user_id = context["bot_user_id"]
+
+    try:
         slack_resp = app.client.chat_postMessage(
             channel=channel_id, thread_ts=thread_ts, text=WAIT_MESSAGE
         )
         reply_message_ts = slack_resp["message"]["ts"]
-
         conversation = app.client.conversations_replies(
             channel=channel_id, ts=thread_ts, inclusive=True
         )["messages"]
@@ -350,7 +463,7 @@ def make_ai_response(
                 model=model,
             )
         else:
-            completion = openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
+            completion: OpenAIObject = openai.ChatCompletion.create(  # type: ignore[no-untyped-call] # noqa: E501
                 model=model, messages=messages
             )
             response_text = completion.choices[0].message["content"]
@@ -369,6 +482,13 @@ def make_ai_response(
 
 
 def run_with_the_best_model(**kwargs) -> None:
+    """Runs the AI response function with the best available model.
+
+    Args:
+        **kwargs: Keyword arguments to pass to the make_ai_response function.
+
+    If an exception occurs, falls back to a default model.
+    """
     try:
         make_ai_response(**kwargs)
     except Exception:  # noqa: BLE001
