@@ -8,6 +8,7 @@ COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false \
   && poetry install --only main --no-interaction --no-ansi --no-cache
 
-COPY slack_bot ./
+COPY slack_bot slack_bot/
+COPY app.py ./
 
 CMD ["python", "app.py"]

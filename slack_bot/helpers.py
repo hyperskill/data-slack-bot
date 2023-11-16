@@ -9,14 +9,14 @@ from typing import Any, TYPE_CHECKING
 
 import openai
 import tiktoken
-from db import DB
 from dotenv import load_dotenv
-from trafilatura import extract, fetch_url
+from trafilatura import extract, fetch_url  # type: ignore[import]
 from trafilatura.settings import use_config  # type: ignore[import]
-from youtrack import YouTrack
 
 from slack_bot.assistant import Assistant, Phase
 from slack_bot.clickhouse import ClickHouse
+from slack_bot.db import DB
+from slack_bot.youtrack import YouTrack
 
 load_dotenv()
 
@@ -42,7 +42,7 @@ WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
 BEST_MODEL = "gpt-4-1106-preview"
 MODEL = "gpt-4"
-projects = json.loads(data["yt_projects.json"])
+projects = json.loads(data["yt_projects.json"] or "{}")
 projects_shortnames = [project["shortName"].lower() for project in projects]
 AN_COMMAND = "an"
 YT_COMMAND = "yt"
@@ -151,6 +151,13 @@ def process_message(message: dict[str, str], bot_user_id: str, role: str) -> str
     return clean_message_text(message_text, role, bot_user_id)
 
 
+def coock_prompt(prompt: Any[str, None], replacement: Any[str, None]) -> str:
+    if prompt and replacement:
+        return prompt.replace("{{template}}", replacement)
+
+    raise Exception("Prompt or replacement is missing.")  # noqa: TRY002
+
+
 def process_conversation(
     conversation_messages: list[dict[str, str]], bot_user_id: str
 ) -> list[dict[str, str]]:
@@ -165,9 +172,11 @@ def process_conversation(
 
         if cleaned_message in projects_shortnames:
             template = templates[cleaned_message] or templates[YT_COMMAND]
+            system = prompts["clarification"]
 
-            system = prompts["clarification"].replace("{{template}}", template)
-            messages.append({"role": "system", "content": system})
+            messages.append(
+                {"role": "system", "content": coock_prompt(system, template)}
+            )
             continue
 
         role = "assistant" if message["user"] == bot_user_id else "user"
@@ -180,20 +189,16 @@ def process_conversation(
 
 
 def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) -> str:
-    funcs = [json.loads(functions["create_issue"])]
+    func = json.loads(functions["create_issue"] or "{}")
     openai_response = openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
         model=model,
         messages=messages,
-        functions=funcs,
+        functions=[func],
         function_call={"name": "create_issue"},
     )
 
-    arguments = json.loads(
-        openai_response.choices[0]
-        .message.get("function_call", {})
-        .get("arguments", {}),
-        strict=False,
-    )
+    response_item = next(iter(openai_response))
+    arguments = response_item.get("function_call", {}).get("arguments", {})
 
     yt = YouTrack(
         base_url=YT_BASE_URL,
@@ -222,7 +227,7 @@ def generate_sql(problem: str, model: str) -> str:
         {"role": "user", "content": shots["users_part"]},
         {"role": "assistant", "content": shots["users_part.sql"]},
     ]
-    funcs = [json.loads(functions["run_query.json"])]
+    funcs = [json.loads(functions["run_query.json"] or "{}")]
     phases = {
         "developing": Phase(
             name="developing",
@@ -331,13 +336,10 @@ def make_ai_response(
 
             template = templates[maybe_short_name] or templates[YT_COMMAND]
             messages.pop()  # remove YT_COMMAND
+            system = prompts["clarification"]
+
             messages.append(
-                {
-                    "role": "system",
-                    "content": prompts["clarification"].replace(
-                        "{{template}}", template
-                    ),
-                }
+                {"role": "system", "content": coock_prompt(system, template)}
             )
             response_text = submit_issue(
                 messages=messages, project_id=project_id, model=model

@@ -24,9 +24,10 @@ class Assistant:
         response = self.openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
             model=model, messages=messages, temperature=temperature, **kwargs
         )
-        response_item = next(iter(response))
-        content = response_item.text
-        arguments = response_item.get("function_call", {}).get("arguments", {})
+        content = response.choices[0].message["content"]
+        arguments = (
+            response.choices[0].message.get("function_call", {}).get("arguments", {})
+        )
 
         if "functions" in kwargs:
             return arguments
