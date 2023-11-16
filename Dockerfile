@@ -4,7 +4,7 @@ LABEL authors="Hyperskill Team"
 RUN apk add --no-cache bash \
   && python -m pip install --upgrade poetry==1.6.1
 
-COPY slack_bot/pyproject.toml slack_bot/poetry.lock ./
+COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.create false \
   && poetry install --only main --no-interaction --no-ansi --no-cache
 
