@@ -9,7 +9,7 @@ from typing import Any, TYPE_CHECKING
 
 import openai
 import tiktoken
-from clickhouse import ClickHouse
+from clickhouse import ClickHouse  # type: ignore[import]
 from db import DB
 from dotenv import load_dotenv
 from trafilatura import extract, fetch_url
