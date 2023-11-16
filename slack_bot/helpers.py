@@ -9,7 +9,6 @@ from typing import Any, TYPE_CHECKING
 
 import openai
 import tiktoken
-from slack_bot.clickhouse import ClickHouse
 from db import DB
 from dotenv import load_dotenv
 from trafilatura import extract, fetch_url
@@ -17,6 +16,7 @@ from trafilatura.settings import use_config  # type: ignore[import]
 from youtrack import YouTrack
 
 from slack_bot.assistant import Assistant, Phase
+from slack_bot.clickhouse import ClickHouse
 
 load_dotenv()
 
