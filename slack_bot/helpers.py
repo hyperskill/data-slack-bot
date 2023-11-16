@@ -9,13 +9,14 @@ from typing import Any, TYPE_CHECKING
 
 import openai
 import tiktoken
-from assistant import Assistant, Phase
 from clickhouse import ClickHouse
 from db import DB
 from dotenv import load_dotenv
 from trafilatura import extract, fetch_url
-from trafilatura.settings import use_config
+from trafilatura.settings import use_config  # type: ignore[import]
 from youtrack import YouTrack
+
+from slack_bot.assistant import Assistant, Phase
 
 load_dotenv()
 
@@ -245,7 +246,10 @@ def generate_sql(problem: str, model: str) -> str:
         functions=phase.functions,
         function_call={"name": "run_query"},
     )
-    phase.result = json.loads(completion, strict=False)["sql_query"]
+    if isinstance(completion, str):
+        phase.result = json.loads(completion, strict=False)["sql_query"]
+    else:
+        phase.result = completion["sql_query"]
 
     try:
         ch_client.execute(phase.result)
