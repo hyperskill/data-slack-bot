@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
-
 from utils import (
     run_with_the_best_model,
     SLACK_APP_TOKEN,

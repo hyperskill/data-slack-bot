@@ -9,13 +9,12 @@ from typing import Any, TYPE_CHECKING
 
 import openai
 import tiktoken
-from dotenv import load_dotenv
-from trafilatura import extract, fetch_url
-from trafilatura.settings import use_config
-
 from assistant import Assistant, Phase
 from clickhouse import ClickHouse
 from db import DB
+from dotenv import load_dotenv
+from trafilatura import extract, fetch_url
+from trafilatura.settings import use_config
 from youtrack import YouTrack
 
 load_dotenv()
@@ -42,7 +41,7 @@ WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
 BEST_MODEL = "gpt-4-1106-preview"
 MODEL = "gpt-4"
-projects = json.loads(data["yt_projects.json"])  # type: ignore[arg-type]
+projects = json.loads(data["yt_projects.json"])
 projects_shortnames = [project["shortName"].lower() for project in projects]
 AN_COMMAND = "an"
 YT_COMMAND = "yt"
@@ -166,9 +165,7 @@ def process_conversation(
         if cleaned_message in projects_shortnames:
             template = templates[cleaned_message] or templates[YT_COMMAND]
 
-            system = prompts["clarification"].replace(  # type: ignore[union-attr]
-                "{{template}}", template  # type: ignore[arg-type]
-            )
+            system = prompts["clarification"].replace("{{template}}", template)
             messages.append({"role": "system", "content": system})
             continue
 
@@ -182,7 +179,7 @@ def process_conversation(
 
 
 def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) -> str:
-    funcs = [json.loads(functions["create_issue"])]  # type: ignore[arg-type]
+    funcs = [json.loads(functions["create_issue"])]
     openai_response = openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
         model=model,
         messages=messages,
@@ -224,7 +221,7 @@ def generate_sql(problem: str, model: str) -> str:
         {"role": "user", "content": shots["users_part"]},
         {"role": "assistant", "content": shots["users_part.sql"]},
     ]
-    funcs = [json.loads(functions["run_query.json"])]  # type: ignore[arg-type]
+    funcs = [json.loads(functions["run_query.json"])]
     phases = {
         "developing": Phase(
             name="developing",
@@ -248,7 +245,7 @@ def generate_sql(problem: str, model: str) -> str:
         functions=phase.functions,
         function_call={"name": "run_query"},
     )
-    phase.result = json.loads(completion, strict=False)["sql_query"]  # type: ignore[arg-type]  # noqa: E501
+    phase.result = json.loads(completion, strict=False)["sql_query"]
 
     try:
         ch_client.execute(phase.result)
@@ -333,10 +330,8 @@ def make_ai_response(
             messages.append(
                 {
                     "role": "system",
-                    "content": prompts[
-                        "clarification"
-                    ].replace(  # type: ignore[union-attr]
-                        "{{template}}", template  # type: ignore[arg-type]
+                    "content": prompts["clarification"].replace(
+                        "{{template}}", template
                     ),
                 }
             )

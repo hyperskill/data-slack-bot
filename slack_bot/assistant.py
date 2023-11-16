@@ -21,13 +21,13 @@ class Assistant:
         **kwargs,
     ) -> str | dict[str, Any]:
         """Get a completion from the OpenAI API."""
-        response = self.openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
+        response = self.openai.ChatCompletion.create(
             model=model, messages=messages, temperature=temperature, **kwargs
         )
-
-        content = response.choices[0].message["content"]
+        response_item = next(iter(response))
+        content = response_item.text
         arguments = (
-            response.choices[0].message.get("function_call", {}).get("arguments", {})
+            response_item.get("function_call", {}).get("arguments", {})
         )
 
         if "functions" in kwargs:
