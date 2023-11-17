@@ -287,8 +287,12 @@ def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) ->
         function_call={"name": "create_issue"},
     )
 
-    response_item = next(iter(openai_response))
-    arguments = response_item.get("function_call", {}).get("arguments", {})
+    arguments = json.loads(
+        openai_response.choices[0]
+        .message.get("function_call", {})
+        .get("arguments", {}),
+        strict=False,
+    )
 
     yt = YouTrack(
         base_url=YT_BASE_URL,
