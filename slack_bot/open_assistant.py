@@ -66,7 +66,7 @@ class OpenAssistant:
             assistant_id=self.assistant.id
         )
 
-    def refresh_run(self) -> Run:
+    def retrieve_run(self) -> Run:
         """Gets the run status."""
         if not self.thread:
             raise NoThreadError
@@ -86,7 +86,7 @@ class OpenAssistant:
         messages = client.beta.threads.messages.list(thread_id=self.thread.id)
         return messages.data
 
-    def interact(self, messages) -> list[ThreadMessage] | None:
+    def interact(self, messages: list[str]) -> list[ThreadMessage] | None:
         """Interacts with the assistant."""
         self.create_thread()
 
@@ -104,7 +104,7 @@ class OpenAssistant:
 
         for _ in range(10):
             sleep(SECONDS)
-            self.run = self.refresh_run()
+            self.run = self.retrieve_run()
 
             if self.run.status == "completed":
                 return self.get_thread_messages()

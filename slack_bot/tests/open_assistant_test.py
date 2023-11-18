@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -7,6 +8,8 @@ from openai import OpenAI
 
 from slack_bot.clickhouse import ClickHouse
 from slack_bot.open_assistant import OpenAssistant
+
+logging.basicConfig(level=logging.DEBUG)
 
 load_dotenv()
 client = OpenAI()
@@ -24,8 +27,14 @@ dev = OpenAssistant(
     client.beta.assistants.retrieve(os.environ.get("DEVELOPER_ID") or "")
 )
 
-message = "\n".join([PLAN_COMMAND, EXAMPLE, MANIPULATION])
+user_input = "\n".join([PLAN_COMMAND, EXAMPLE, MANIPULATION])
 response = planner.interact(
-    messages=[message]
+    messages=[user_input]
 )
-print(response)
+
+if response:
+    for message in response[::-1]:
+        print(f"============{message.role}===========")
+        print(message.content[0].text.value)
+        print("==============================")
+        print()
