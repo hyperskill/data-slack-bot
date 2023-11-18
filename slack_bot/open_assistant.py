@@ -1,86 +1,114 @@
-from time import sleep
-from typing import Literal, Union
-from openai import OpenAI
+from __future__ import annotations
+
 import logging
-from slack_bot.exceptions import NoThreadCreatedError, NoAssistantCreatedError
+from time import sleep
+from typing import Literal, TYPE_CHECKING
+
+from openai import OpenAI
+
+from slack_bot.exceptions import NoRunError, NoThreadError
+
+if TYPE_CHECKING:
+    from openai.types.beta.assistant import Assistant
+    from openai.types.beta.assistant_create_params import Tool
+    from openai.types.beta.thread import Thread
+    from openai.types.beta.threads import Run, ThreadMessage
 
 client = OpenAI()
 
+SECONDS = 10
+INFO_MESSAGE = f"Run not completed yet. Waiting {SECONDS} seconds..."
+
 class OpenAssistant:
-    def __init__(self, assistant_name: str = 'assistant', model: str = 'gpt-3.5-turbo', tools=None):
-        self.assistant_name = assistant_name
+    def __init__(
+        self,
+        assistant: Assistant,
+        model: str = "gpt-3.5-turbo",
+        tools: Tool | None=None
+    ) -> None:
         self.model = model
-        self.tools = tools if tools else []
-        self.assistant = self.create_assistant()
-        self.thread = None
-        self.message = None
-        self.run = None
+        self.tools = tools
+        self.assistant = assistant
+        self.thread: Thread | None=None
+        self.message: ThreadMessage | None= None
+        self.run: Run | None=None
 
-    def create_assistant(self):
-        assistant = client.beta.assistants.create(
-            name=self.assistant_name,
-            model=self.model,
-            tools=self.tools
-        )
-        return assistant
+    def create_thread(self) -> None:
+        """Creates a new thread using OpenAI beta threads API.
 
-    def create_thread(self):
+        It does not return any value.
+        """
         self.thread = client.beta.threads.create()
 
-        return self.thread
-
-    def add_message_to_thread(self, content, role: Literal["user"], thread_id=None) -> None:
-        if thread_id is None and self.thread:
-            thread_id = self.thread.id
-        else:
-            raise NoThreadCreatedError()
-        
-        if content is None:
-            logging.error('content cannot be None.')
-            raise ValueError('content cannot be None.')
-        
+    def add_message_to_thread(
+            self,
+            content: str,
+            role: Literal["user"],
+            thread_id: str
+        ) -> None:
+        """Adds a new message to the thread."""
         try:
             self.message = client.beta.threads.messages.create(
                 thread_id=thread_id,
                 role=role,
                 content=content
             )
-        except Exception as e:
-            logging.error(e, exc_info=True)
-    
-    def create_run(self, thread_id: Union[str, None] = None, assistant_id: Union[str, None] = None) -> None:
-        if thread_id is None and self.thread:
-            thread_id = self.thread.id
-        else:
-            raise NoThreadCreatedError()
-        
-        if assistant_id is None and self.assistant:
-            assistant_id = self.assistant.id
-        else:
-            raise NoAssistantCreatedError()
-        
+        except Exception:
+            logging.exception("An error occurred while adding a message to the thread.")
+
+    def create_run(self) -> None:
+        """Creates a new run using OpenAI beta threads API."""
+        if not self.thread:
+            raise NoThreadError
+
         self.run = client.beta.threads.runs.create(
-            thread_id=thread_id,
-            assistant_id=assistant_id
+            thread_id=self.thread.id,
+            assistant_id=self.assistant.id
         )
 
-    def check_run_status(self, thread_id, run_id):
-        response = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run_id)
-        return response
+    def refresh_run(self) -> Run:
+        """Gets the run status."""
+        if not self.thread:
+            raise NoThreadError
+        if not self.run:
+            raise NoRunError
 
-    def get_assistant_responses(self, thread_id):
-        messages = client.beta.threads.messages.list(thread_id=thread_id)
-        return [msg for msg in messages.data if msg.role == 'assistant']
-    
-    def provide_response(self, run_id, thread_id):
-        for _ in range(10):
-            sleep(3)
-            run = client.beta.threads.runs.retrieve(
-                thread_id=thread_id,
-                run_id=run_id
+        return client.beta.threads.runs.retrieve(
+            thread_id=self.thread.id,
+            run_id=self.run.id
+        )
+
+    def get_thread_messages(self) -> list[ThreadMessage]:
+        """Gets the thread messages."""
+        if not self.thread:
+            raise NoThreadError
+
+        messages = client.beta.threads.messages.list(thread_id=self.thread.id)
+        return messages.data
+
+    def interact(self, messages) -> list[ThreadMessage] | None:
+        """Interacts with the assistant."""
+        self.create_thread()
+
+        if not self.thread:
+            raise NoThreadError
+
+        for message in messages:
+            self.add_message_to_thread(
+                content=message,
+                role="user",
+                thread_id=self.thread.id
             )
-            if run.status == 'completed':
-                messages = client.beta.threads.messages.list(thread_id=thread_id)
-                return [msg for msg in messages.data if msg.role == 'assistant'][0].content
-            else:
-                print('Run not completed yet. Waiting 3 seconds...')
+
+        self.create_run()
+
+        for _ in range(10):
+            sleep(SECONDS)
+            self.run = self.refresh_run()
+
+            if self.run.status == "completed":
+                return self.get_thread_messages()
+
+            logging.debug(INFO_MESSAGE)
+
+        return None

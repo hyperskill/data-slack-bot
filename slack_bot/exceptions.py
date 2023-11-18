@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 import logging
 
-class NoThreadCreatedError(Exception):
-    """Raised when no thread_id is provided and no thread has been created yet."""
-    logging.error('No thread_id provided and no thread created yet.')
 
-class NoAssistantCreatedError(Exception):
-    """Raised when no assistant_id is provided and no assistant has been created yet."""
-    logging.error('No assistant_id provided and no assistant created yet.')
+class NoThreadError(Exception):
+    """Raised when a thread is not found."""
+    def __init__(self, message: str = "Thread does not exist.") -> None:
+        super().__init__(message)
+        logging.error(message)
+
+class NoRunError(Exception):
+    """Raised when a run is not found."""
+    def __init__(self, message: str = "Run does not exist.") -> None:
+        super().__init__(message)
+        logging.error(message)
