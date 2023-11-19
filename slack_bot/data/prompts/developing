@@ -38,4 +38,4 @@ Available tables:
     -`selected_track_id` – current selected track_id or selected track_id at the moment of an event
     -`is_biased` – is user biased (0, 1)
     -`is_superuser` – is user superuser (0, 1)
-    -`hypercoins` – user hypercoins
+    -`hypercoins` – user hypercoins (called "gems" now)
