@@ -24,9 +24,11 @@ class OpenAssistant:
         self,
         assistant: Assistant,
         model: str = "gpt-3.5-turbo",
-        tools: Tool | None=None
+        required_actions: list[str] | None=None,
+        tools: list[Tool] | None=None,
     ) -> None:
-        self.model = model
+        self.model = model,
+        self.required_actions = required_actions
         self.tools = tools
         self.assistant = assistant
         self.thread: Thread | None=None
@@ -56,14 +58,17 @@ class OpenAssistant:
         except Exception:
             logging.exception("An error occurred while adding a message to the thread.")
 
-    def create_run(self) -> None:
+    def create_run(self, **kwargs) -> None:
         """Creates a new run using OpenAI beta threads API."""
+        if "tools" not in kwargs:
+            kwargs["tools"] = self.tools
         if not self.thread:
             raise NoThreadError
 
         self.run = client.beta.threads.runs.create(
             thread_id=self.thread.id,
-            assistant_id=self.assistant.id
+            assistant_id=self.assistant.id,
+            **kwargs
         )
 
     def retrieve_run(self) -> Run:
@@ -86,21 +91,26 @@ class OpenAssistant:
         messages = client.beta.threads.messages.list(thread_id=self.thread.id)
         return messages.data
 
-    def interact(self, messages: list[str]) -> list[ThreadMessage] | None:
+    def interact(
+            self,
+            messages: list[str] | None=None,
+            **kwargs
+        ) -> list[ThreadMessage] | None:
         """Interacts with the assistant."""
-        self.create_thread()
-
         if not self.thread:
-            raise NoThreadError
+            self.create_thread()
+            if not self.thread:
+                raise NoThreadError
 
-        for message in messages:
-            self.add_message_to_thread(
-                content=message,
-                role="user",
-                thread_id=self.thread.id
-            )
+        if messages:
+            for message in messages:
+                self.add_message_to_thread(
+                    content=message,
+                    role="user",
+                    thread_id=self.thread.id
+                )
 
-        self.create_run()
+        self.create_run(**kwargs)
 
         for _ in range(10):
             sleep(SECONDS)
@@ -109,6 +119,6 @@ class OpenAssistant:
             if self.run.status == "completed":
                 return self.get_thread_messages()
 
-            logging.debug(INFO_MESSAGE)
+            logging.info(INFO_MESSAGE)
 
         return None
