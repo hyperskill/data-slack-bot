@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from slack_bot.clickhouse import ClickHouse
 from slack_bot.open_assistant import OpenAssistant
 
 if TYPE_CHECKING:
@@ -18,7 +17,6 @@ logging.basicConfig(level=logging.INFO)
 
 load_dotenv()
 client = OpenAI()
-ch_client = ClickHouse().client
 
 # constants
 PLAN_COMMAND = "Hello! Could you, please, make up a SQL query developing plan for me?"
