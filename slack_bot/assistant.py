@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
+from dotenv import load_dotenv
 from openai import OpenAI
 
+load_dotenv()
 client = OpenAI()
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletionMessageParam
 
 
 DEFAULT_MODEL = "gpt-4-1106-preview"  # "gpt-3.5-turbo"
@@ -17,21 +22,21 @@ class Assistant:
 
     def get_completion(
         self,
-        messages: list[dict[str, str]],
+        messages: list[ChatCompletionMessageParam],
         model: str = DEFAULT_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
         **kwargs,
-    ) -> str | dict[str, Any]:
+    ) -> str | None:
         """Get a completion from the OpenAI API."""
         response = self.openai.chat.completions.create(  # type: ignore[no-untyped-call] # noqa: E501
             model=model, messages=messages, temperature=temperature, **kwargs
         )
         content = response.choices[0].message.content
         arguments = (
-            response.choices[0].message.function_call.arguments
+            response.choices[0].message.tool_calls[0].function.arguments
         )
 
-        if "functions" in kwargs:
+        if "tools" in kwargs:
             return arguments
 
         return content

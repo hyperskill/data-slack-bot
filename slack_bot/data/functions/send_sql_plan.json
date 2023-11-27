@@ -8,6 +8,7 @@
                 "type": "string",
                 "description": "SQL query plan to send"
             }
-        }
+        },
+        "required": ["sql_query_plan"]
     }
 }

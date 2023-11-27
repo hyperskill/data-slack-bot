@@ -7,11 +7,9 @@ import traceback
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
-from openai import OpenAI
-
-client = OpenAI()
 import tiktoken
 from dotenv import load_dotenv
+from openai import OpenAI
 from trafilatura import extract, fetch_url  # type: ignore[import]
 from trafilatura.settings import use_config  # type: ignore[import]
 
@@ -21,6 +19,7 @@ from slack_bot.db import DB
 from slack_bot.youtrack import YouTrack
 
 load_dotenv()
+client = OpenAI()
 
 
 if TYPE_CHECKING:

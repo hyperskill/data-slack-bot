@@ -8,6 +8,7 @@
                 "type": "string",
                 "description": "SQL query to run"
             }
-        }
+        },
+        "required": ["sql_query"]
     }
 }

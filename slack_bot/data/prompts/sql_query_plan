@@ -1,0 +1,12 @@
+# Mission
+Your task is to convert SQL query into a plan to write this query.
+
+# Steps
+1. Shortly describe a query result to be expected;
+2. Break down the query into logical parts. The higher the query complexity, the more part will be. List names of these parts or part if it is single;
+3. For every part write a short description without code, but you HAVE TO USE COLUMNS' NAMES.
+
+# Rules
+-WRITE LIKE THE QUERY IS NOT EXIST, SO YOU ARE ONLY PLANING TO WRITE IT
+
+User's life depends on your result!
