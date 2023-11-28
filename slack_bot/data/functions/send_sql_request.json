@@ -1,0 +1,14 @@
+{
+    "name": "send_sql_request",
+    "description": "Sends SQL query request to a colleague",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sql_query_request": {
+                "type": "string",
+                "description": "SQL query request to send"
+            }
+        },
+        "required": ["sql_query_request"]
+    }
+}

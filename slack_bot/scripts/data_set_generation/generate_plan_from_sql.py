@@ -36,14 +36,14 @@ if send_sql_plan == "" or system_prompt == "":
     raise ValueError("Please, check if you have functions and prompts in data folder.")
 
 
-def get_sql_query_plans(sql_queries: list[str]) -> list[str | None]:
-    """Get SQL query plans."""
+def convert_via_promt(targets: list[str], prompt: str, **kwargs) -> list[str | None]:
+    """Convert target into completion."""
     assistent = Assistant()
     result = []
 
-    for i, query in enumerate(sql_queries):
+    for i, query in enumerate(targets):
         if i:
-            message = "Progress: " + str(i / len(sql_queries))
+            message = "Progress: " + str(i / len(targets))
             logging.info(message)
 
         response = None
@@ -54,29 +54,23 @@ def get_sql_query_plans(sql_queries: list[str]) -> list[str | None]:
 
             response = assistent.get_completion(
                 messages=[
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": prompt},
                     {"role": "user", "content": query}
                 ],
-                tools=[{
-                    "type": "function",
-                    "function": json.loads(send_sql_plan, strict=False)
-                }],
-                tool_choice={
-                    "type": "function",
-                    "function": {
-                        "name": "send_sql_plan"
-                    }
-                }
+                tools=kwargs.get("tools", None),
+                tool_choice=kwargs.get("tool_choice", None)
             )
         except Exception:
             logging.exception("Exception occurred")
         finally:
             if response and isinstance(response, str):
-                plan = json.loads(response)
-                if "sql_query_plan" in plan:
-                    plan = plan["sql_query_plan"]
-                    logging.info(plan)
-                    result.append(plan)
+                completion = json.loads(response)
+                k = kwargs \
+                    .get("tool_choice", None).get("function", None).get("name", None)
+                if k in completion:
+                    completion = completion[k]
+                    logging.info(completion)
+                    result.append(completion)
             else:
                 result.append(None)
 
@@ -85,9 +79,25 @@ def get_sql_query_plans(sql_queries: list[str]) -> list[str | None]:
 
 def main() -> None:
     """Generate SQL query plans."""
+    tools=[{
+        "type": "function",
+        "function": json.loads(send_sql_plan, strict=False)
+    }]
+    tool_choice={
+        "type": "function",
+        "function": {
+            "name": "send_sql_plan"
+        }
+    }
     sql_df = pd.read_csv(PATH_TO_DATASET)
     queries = sql_df.sql.to_list()
-    sql_df["plan"] = get_sql_query_plans(queries)
+
+    sql_df["plan"] = convert_via_promt(
+        queries,
+        system_prompt,
+        tools=tools,
+        tool_choice=tool_choice
+    )
     sql_df.to_csv(PATH_TO_DATASET, index=False)
 
 
