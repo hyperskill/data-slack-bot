@@ -14,15 +14,16 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 PATH_TO_ROOT = Path(__file__).parent.parent.parent
-functions = DB(PATH_TO_ROOT / "data" / "functions")
-send_sql_request = functions["send_sql_request.json"] or "{}"
-prompts = DB(PATH_TO_ROOT / "data" / "prompts")
-system_prompt: str = prompts["sql_query_request"] or ""
 PATH_TO_DATASET = Path(
     PATH_TO_ROOT / "data" / "datasets" / "sql_queries.csv"
 )
 
-if send_sql_request == "" or system_prompt == "":
+functions = DB(PATH_TO_ROOT / "data" / "functions")
+send_user_request = functions["send_user_request.json"] or "{}"
+prompts = DB(PATH_TO_ROOT / "data" / "prompts")
+system_prompt: str = prompts["user_request_from_sql_plan"] or ""
+
+if send_user_request == "" or system_prompt == "":
     raise ValueError("Please, check if you have functions and prompts in data folder.")
 
 
@@ -30,12 +31,12 @@ def main() -> None:
     """Generate SQL query requests."""
     tools=[{
         "type": "function",
-        "function": json.loads(send_sql_request, strict=False)
+        "function": json.loads(send_user_request, strict=False)
     }]
     tool_choice={
         "type": "function",
         "function": {
-            "name": "send_sql_request"
+            "name": "send_user_request"
         }
     }
     sql_df = pd.read_csv(PATH_TO_DATASET)

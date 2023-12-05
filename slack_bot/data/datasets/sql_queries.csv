@@ -1,4 +1,4 @@
-sql,plan
+sql,plan,request
 "--
 WITH
 
@@ -21,7 +21,21 @@ result AS (
 )
 
 SELECT *
-FROM result;",
+FROM result;","1. Describe the expected query result: The query will return a count of users from the 'hyperskill_private.users' table who meet certain criteria.
+
+2. Break down the query into logical parts: The query consists of a Common Table Expression (CTE) named 'result' and a final SELECT statement to retrieve the data from the CTE.
+
+3. Description of each part:
+
+- CTE 'result':
+  - Perform a SELECT statement to count the number of users.
+  - Filter users from the 'hyperskill_private.users' table where the country, derived from 'country_by_ip_id' using the 'dictGetString' function and the 'hyperskill.alt_cities_country_dict' dictionary, is not 'Russia' or 'Belarus'.
+  - Ensure that users have more than 100 hypercoins.
+  - Check that the 'created_at_min' value in the 'sub_premium_dts' map is not equal to the zero DateTime.
+  - Exclude users who are present in the 'hyperskill.users_is_biased' table.
+
+- Final SELECT statement:
+  - Retrieve all columns from the CTE 'result', which in this case is just the count of users meeting the above criteria.","Can you provide me with the number of users who are not from Russia or Belarus, have more than 100 hypercoins, are premium subscribers, and are not flagged as biased in our database?"
 "--
 CREATE OR REPLACE VIEW hyperskill_reports.notifications_log
 AS
@@ -148,7 +162,19 @@ result AS (
 )
 
 SELECT *
-FROM result",
+FROM result","The query is designed to create or replace a view named 'hyperskill_reports.notifications_log'. The expected result of this query is a view that consolidates user interaction with notifications and their subsequent activities on the platform. The view will include details such as the type of notification, whether it was opened, and any submissions made by the user after receiving the notification. The data is filtered to only include interactions from the last 35 days and excludes biased users.
+
+The query is broken down into the following logical parts:
+
+1. user_data: This part aggregates user interactions with notifications and their submission runs. It filters actions to 'view' and 'click', and platforms to 'web', 'iOS', and 'Android'. It groups by user_id and collects arrays of notification clicks and submission run timestamps.
+
+2. user_activity_log: This part processes the aggregated data from user_data to extract individual notification IDs and timestamps for different platforms (email, website, mobile). It also joins the submission run timestamps to the corresponding user and notification.
+
+3. notification_templates: This part selects the notification template details such as id, channel, name, and trigger from the 'notifications_templatenotification' table, filtering out disabled or deleted templates.
+
+4. result: This part combines the user activity log with the notification data and template information. It calculates cohort-related dates and includes user and notification IDs, channel, notification type, and various timestamps related to notification interactions and submission runs. It filters out biased users.
+
+5. Final SELECT: This part selects all columns from the 'result' CTE to form the final view.","Can you provide a report that shows how our users have been interacting with different types of notifications over the past month? Specifically, I'm interested in which notifications they're opening and if they're taking any actions, like submitting something, after receiving them. Please exclude any data from biased users and focus on the most recent 35 days."
 "--
 WITH
 
@@ -180,7 +206,22 @@ result AS (
 )
 
 SELECT *
-FROM result;",
+FROM result;","1. Describe the expected query result: The query will produce a result set that includes the name of the track, the cohort (registration date), and a calculated metric. The metric is the ratio of the number of 'completed_step' actions on the day after registration to the unique count of user IDs.
+
+2. Break down the query into logical parts: The query consists of a Common Table Expression (CTE) named 'result' and a final SELECT statement to retrieve the data from the CTE.
+
+3. Description of parts:
+
+- CTE 'result':
+  - Select the track name using a multiIf function that maps selected_track_id to a string representing the track name.
+  - Include the registration_date as 'cohort'.
+  - Calculate the 'metric' by counting the number of 'completed_step' actions that occurred the day after the registration date and dividing it by the unique count of user IDs.
+  - Filter the data from the 'hyperskill.content' table where the date is within 14 days before and 7 days after '2023-09-18', the registration_date is within the same range, the action is either 'view' or 'completed_step', track_id is not 0, and flags for is_biased, is_guest, and is_superuser are all 0.
+  - Group the results by 'cohort' and 'track'.
+  - Order the results by 'cohort'.
+
+- Final SELECT statement:
+  - Select all columns from the CTE 'result'.","Can we get a report on how well new users are engaging with our tracks? Specifically, I'd like to see the ratio of completed steps the day after they sign up, broken down by the track they chose and their registration date."
 "-- The number of user interactions with different elements on the theory and practice screens.
 
 -- in the theory tab:
@@ -292,7 +333,47 @@ objects_stat_on_problems AS (
 
 SELECT *
 FROM objects_stat_on_problems;
-",
+","### Expected Query Result
+The expected result of the query is two separate sets of average click rates for different user interactions with elements on the theory and practice screens. The first set will include average click rates for comments, useful links, and show discussion on the theory tab. The second set will include average click rates for comments, useful links, show discussion, solutions, and hints on the practice tab.
+
+### Logical Parts of the Query
+The query can be broken down into the following logical parts:
+1. Identification of theory steps
+2. Calculation of user interaction statistics on theory steps
+3. Aggregation of average click rates on theory steps
+4. Identification of problem (practice) steps
+5. Calculation of user interaction statistics on problem steps
+6. Aggregation of average click rates on problem steps
+
+### Part Descriptions
+
+#### 1. Identification of theory steps
+- Select `step_id` and `topic_id` from the `hyperskill.stg_steps` table.
+- Filter the results where `step_type` is equal to 'text' to identify theory steps.
+
+#### 2. Calculation of user interaction statistics on theory steps
+- Calculate the unique count of `user_id` who visited theory steps as `visited_users`.
+- Calculate the unique count of `user_id` who clicked on comments, useful links, and show discussion as `comment_click_users`, `useful_link_click_users`, and `show_discussion_click_users` respectively.
+- Filter the `hyperskill.content` table for actions within the last 6 months and for 'click' actions.
+- Ensure that the `page` attribute corresponds to the `step_id` from the previously identified theory steps.
+
+#### 3. Aggregation of average click rates on theory steps
+- Calculate the average click rates for comments, useful links, and show discussion by dividing the respective click user counts by the visited user count.
+- Round these average rates to three decimal places.
+
+#### 4. Identification of problem (practice) steps
+- Select `step_id` and `topic_id` from the `hyperskill.stg_steps` table.
+- Filter the results where `step_type` is not equal to 'text' and `topic_id` is greater than 0 to identify problem steps.
+
+#### 5. Calculation of user interaction statistics on problem steps
+- Calculate the unique count of `user_id` who visited problem steps as `visited_users`.
+- Calculate the unique count of `user_id` who clicked on comments, useful links, show discussion, solutions, and hints as `comment_click_users`, `useful_link_click_users`, `show_discussion_click_users`, `solutions_click_users`, and `comments_hint_click_users` respectively.
+- Filter the `hyperskill.content` table for actions within the last 6 months and for 'click' actions.
+- Ensure that the `page` attribute corresponds to the `step_id` from the previously identified problem steps.
+
+#### 6. Aggregation of average click rates on problem steps
+- Calculate the average click rates for comments, useful links, show discussion, solutions, and hints by dividing the respective click user counts by the visited user count.
+- Round these average rates to three decimal places.","Can you provide me with the average engagement rates for different interactive elements on our theory and practice pages? Specifically, I'm interested in the average click rates for comments, useful links, and discussions on the theory pages, as well as the same elements plus solutions and hints on the practice pages, over the last six months."
 "--
 WITH
 
@@ -344,7 +425,30 @@ users AS (
 SELECT
     user_id,
     email
-FROM users;",
+FROM users;","1. The expected query result is a list of user IDs and their corresponding emails for users who meet specific criteria.
+
+2. The query is broken down into three logical parts: filtered_users, talg, and users.
+
+3. Part: filtered_users
+- Select the user_id from the hyperskill_private.users table.
+- Filter out users who are staff (is_biased = 0), superusers (is_superuser = 0), and those listed in the hyperskill.users_is_biased table.
+- Include only users who have agreed to be testees (is_testee = 1).
+- Exclude users from Russia, Ukraine, and Belarus based on both country_by_ip_id and sub_personal_str_map['ownerCountry'].
+- Consider only users who registered on or after June 1, 2023.
+
+4. Part: talg
+- Select user_id from the hyperskill.polls table.
+- Include only data related to the poll with poll_id = 4.
+- Filter to include only responses where question_1 is '1' or '2'.
+
+5. Part: users
+- Select user_id and email from the hyperskill.content table.
+- The email is retrieved using the dictGetString function and the users_dict dictionary.
+- Include only actions that are 'completed_step'.
+- The user_id must be in the list obtained from the filtered_users part.
+- Group the results by user_id.
+- Having clause filters to include users who have completed non-text steps in the last 62 days and have selected tracks that are Python-related.
+","Can you provide me with a list of user emails who are not staff or superusers, have agreed to be test subjects, are not from Russia, Ukraine, or Belarus, registered after June 1st, 2023, answered '1' or '2' on question 1 of poll 4, have completed non-text steps in the last 62 days, and are on Python-related tracks?"
 "WITH 16 AS retention_depth
 SELECT
     week_number,
@@ -471,7 +575,30 @@ FROM (
 ) AS content_data
 ARRAY JOIN
     retentions AS retention,
-    range(retention_depth) AS week_number;",
+    range(retention_depth) AS week_number;","The expected result of the query is a list of users with their respective week numbers, the date corresponding to those week numbers, user IDs, segments, retention status, and an array of retention data over a certain period.
+
+The query can be broken down into the following logical parts:
+1. Common Table Expression (CTE) definition
+2. Inner subquery
+3. Outer query with ARRAY JOIN
+
+1. CTE definition:
+- Define a CTE with a constant value representing the depth of retention data to be analyzed.
+
+2. Inner subquery:
+- Select user-related data from the 'hyperskill.content' table.
+- Retrieve the user's first platform using the 'dictGetString' function from a dictionary.
+- Get the user's first login date and registration date using the 'dictGetDateTime' function from dictionaries.
+- Calculate the number of days from registration and categorize users into segments based on this duration.
+- Use a custom 'retention' function to calculate retention data based on user actions within specific time frames after the first login date.
+- Filter the data based on conditions such as date range, platform, guest status, first login date, action types, step type, and exclusion of biased users.
+- Group the results by 'user_id'.
+
+3. Outer query with ARRAY JOIN:
+- Select the necessary columns from the inner subquery.
+- Use 'ARRAY JOIN' to expand the 'retentions' array into multiple rows, one for each element in the array.
+- Calculate the 'week_number_date' by converting the 'week_number' to a date.
+- Filter the results based on the retention depth defined in the CTE.","Can you provide me with a breakdown of user retention data over a specific period? I need to see which week each user is in, their registration and login dates, user segments based on how long they've been registered, and their retention status. Also, I'd like to have an array of retention data for each user to analyze their activity over time."
 "-- https://vyahhi.myjetbrains.com/youtrack/issue/AN-1818/Q3-2023-OKR-dashboard-for-Habit-team
 CREATE OR REPLACE VIEW hyperskill_reports.habit_in_week_activity
 AS
@@ -657,7 +784,24 @@ result AS (
 
 SELECT *
 FROM result;
-",
+","1. The first query creates a view named 'habit_in_week_activity' which will contain weekly averages of active days per user for the last 28 weeks.
+
+2. The query is broken down into two logical parts:
+   - user_data: This part collects the number of unique active days per user for each week within the last 28 weeks.
+   - agg: This part calculates the average number of active days across all users for each week.
+
+3. For 'user_data':
+   - Select the start of the week (Monday) for each date as 'week'.
+   - Group the data by 'week' and 'user_id'.
+   - Count the unique number of days the user was active ('active_days') using the 'uniqExact' function on the 'date' column.
+   - Filter the actions to only include 'completed_submission'.
+   - Ensure the date range is between today minus 28 weeks and the start of the current week.
+
+4. For 'agg':
+   - Group the data by 'week'.
+   - Calculate the average number of active days ('avg_active_days') using the 'avg' function on the 'active_days' column from the 'user_data' part.
+
+5. The final select statement retrieves all columns from the 'agg' part to form the view.","Can we get an analysis on user engagement over the last 6 months? Specifically, I'm interested in understanding the average number of days per week that users are actively completing submissions. It would be helpful to see this trend on a weekly basis to track any changes in user habits."
 "--
 WITH
 
@@ -677,7 +821,19 @@ segment AS (
 )
 
 SELECT *
-FROM segment;",
+FROM segment;","1. Describe the expected query result: The query will return a list of users with their email, date_registered, and hypercoins, filtered to exclude users from a specific subset and certain countries, ordered by the number of hypercoins in descending order, limited to the top 20,000 users.
+
+2. Break down the query into logical parts: The query consists of a single Common Table Expression (CTE) named 'segment'.
+
+3. Description of the CTE 'segment':
+- Select the columns 'email', 'date_registered', and 'hypercoins' from the 'hyperskill_private.users' table.
+- Exclude users whose 'user_id' appears in the 'hyperskill.users_is_biased' table.
+- Use the 'dictGetString' function to retrieve the country name associated with the 'country_by_ip_id' column, and exclude users from 'Russia' and 'Belarus'.
+- Order the results by the 'hypercoins' column in descending order.
+- Limit the result to the top 20,000 users based on the 'hypercoins' column.
+
+4. Description of the final SELECT statement:
+- Select all columns from the CTE 'segment' without any additional filtering or ordering, as it has already been done within the CTE.","Can you provide me with a list of our top 20,000 users by hypercoins, excluding any users from Russia and Belarus and those flagged in our biased user table? I need their emails, registration dates, and hypercoin balances for a marketing analysis."
 "-- https://vyahhi.myjetbrains.com/youtrack/issue/AN-1818/Q3-2023-OKR-dashboard-for-Habit-team
 CREATE OR REPLACE VIEW hyperskill_reports.habit_in_week_activity
 AS
@@ -777,7 +933,54 @@ result AS (
 )
 
 SELECT *
-FROM result;",
+FROM result;","1. The first query creates or replaces a view named 'habit_in_week_activity' in the 'hyperskill_reports' schema.
+
+2. The expected result of the first query is a list of weeks with the average number of active days per user for each week.
+
+3. The first query consists of two logical parts:
+   a. user_data
+   b. agg
+
+4. 'user_data' part description:
+   - Select the Monday of the week for each date as 'week'.
+   - Select the 'user_id'.
+   - Calculate the unique count of active days for each user within a week as 'active_days'.
+   - Filter the data from the 'hyperskill.content' table where the 'date' is within the last 28 weeks and before the current week's Monday.
+   - Include only records where the 'action' is 'completed_submission'.
+   - Group the results by 'week' and 'user_id'.
+
+5. 'agg' part description:
+   - Select the 'week'.
+   - Calculate the average number of 'active_days' for each week as 'avg_active_days'.
+   - Group the results by 'week'.
+
+6. The second query creates or replaces a view named 'habit_churn' in the 'hyperskill_reports' schema.
+
+7. The expected result of the second query is a list of periods with the number of users active the previous day, the number of those users who are also active during the current period, and the churn rate.
+
+8. The second query consists of three logical parts:
+   a. user_data
+   b. agg
+   c. result
+
+9. 'user_data' part description for the second query:
+   - Select the 'user_id'.
+   - Aggregate the dates of completed submissions into an array for each user as 'dates'.
+   - Filter the data from the 'hyperskill.content' table where the 'date' is within the last 28 weeks starting from 8 weeks ago.
+   - Include only records where the 'action' is 'completed_submission' and the user's registration date is within the same period.
+   - Group the results by 'user_id'.
+
+10. 'agg' part description for the second query:
+    - Generate a series of dates representing the period of interest as 'period'.
+    - Count the unique users who were active the previous day as 'previous_period_active_users'.
+    - Count the unique users who were active the previous day and are also active during the current period as 'current_period_active_users_from_previous_period'.
+    - Group the results by 'period'.
+
+11. 'result' part description for the second query:
+    - Select the 'period'.
+    - Select the count of 'previous_period_active_users'.
+    - Select the count of 'current_period_active_users_from_previous_period'.
+    - Calculate the churn rate as 'churn'.","Can we get a report on how our users' engagement has changed over the last 28 weeks? Specifically, I'm interested in the average number of active days per user each week, and also in understanding our churn rate over time. It would be helpful to see how many users stay active from one period to the next within this timeframe."
 "-- dict
 -- create mautic leads dict view
 CREATE VIEW IF NOT EXISTS hyperskill_reports.mautic_leads
@@ -918,7 +1121,30 @@ funnel AS (
 
 SELECT *
 FROM funnel
-ORDER BY week_cohort DESC;",
+ORDER BY week_cohort DESC;","1. Expected Query Result:
+- A list of weekly cohorts with the number of users, sent emails, read emails, page hits, completed steps in topics, and completed topics by steps.
+
+2. Logical Parts:
+- Creation of a view named 'mautic_leads'.
+- Creation of a dictionary named 'mautic_leads_dict'.
+- Checking the dictionary with a SELECT query.
+- Defining a map of email identifiers and a filter value.
+- Defining a variable for product months ago.
+- Creating a Common Table Expression (CTE) named 'events'.
+- Creating a CTE named 'conversions_data'.
+- Creating a CTE named 'funnel'.
+- Final SELECT query to retrieve data from the 'funnel' CTE.
+
+3. Part Descriptions:
+- View 'mautic_leads': Select distinct 'id' and 'hs_id' from 'leads' table where 'date_added' is within the last 185 days.
+- Dictionary 'mautic_leads_dict': Create a dictionary with 'id' and 'hs_id' as columns, using the 'mautic_leads' view as the source.
+- Check Dictionary: Select 'id' and 'hs_id' from the 'mautic_leads_dict' to verify its contents.
+- Email Map and Filter Value: Define a map with email identifiers and a variable to hold the filter value for the emails.
+- Product Months Ago: Define a variable to calculate the date range for the events.
+- CTE 'events': Combine data from different actions ('view', 'completed_step', 'completed_topic', 'sent_or_read_email', 'hit_page') for users registered within the date range.
+- CTE 'conversions_data': Calculate conversion metrics for each user based on their actions.
+- CTE 'funnel': Aggregate conversion data by weekly cohorts.
+- Final SELECT: Retrieve and order the aggregated data by descending weeks from the 'funnel' CTE.","Can we get a weekly breakdown of user engagement metrics? Specifically, I'm interested in the number of users, emails sent and read, website interactions, and progress in our educational topics over the past six months."
 "-- https://vyahhi.myjetbrains.com/youtrack/issue/AN-1261
 
 DROP VIEW IF EXISTS hyperskill_reports.learning_users__view;
@@ -951,7 +1177,26 @@ SELECT
     uniqExact(user_id) AS users
 FROM hyperskill_reports.learning_users
 GROUP BY date, user_type;
-",
+","1. Describe the expected query result: The query is expected to create a view named 'hyperskill_reports.daily_learning_users' that will contain aggregated data about users' learning activities on a daily basis, grouped by the date and the type of user (Personal, Team Member, Freemium, Premium, or Other). Each row will represent a unique combination of date and user type, along with the count of unique users who had learning activities on that date for that user type.
+
+2. Break down the query into logical parts: The query consists of two main parts - the creation of the 'learning_users' view and the creation of the 'daily_learning_users' view.
+
+3. Part descriptions:
+
+Part 1: Creation of 'learning_users' view
+- Drop the existing view 'hyperskill_reports.learning_users__view' if it exists.
+- Create or replace the view 'hyperskill_reports.learning_users' with the following specifications:
+  - Select the 'date', 'user_id', and a derived column 'user_type' based on the 'subscription_type' column using a multiIf function to categorize the subscription types into 'Personal', 'Team Member', 'Freemium', 'Premium', or 'Other'.
+  - Filter the data to include records from the last 28 weeks excluding the current day.
+  - Exclude 'user_id' that are present in the 'hyperskill.users_is_biased' table.
+  - Include only actions that are 'failed_submission', 'completed_submission', or 'rejected_submission'.
+  - Exclude steps of type 'text'.
+
+Part 2: Creation of 'daily_learning_users' view
+- Drop the existing view 'hyperskill_reports.daily_learning_users__view' if it exists.
+- Create or replace the view 'hyperskill_reports.daily_learning_users' with the following specifications:
+  - Select the 'date', 'user_type', and count the unique 'user_id' as 'users'.
+  - Group the results by 'date' and 'user_type' to get the daily count of unique users for each user type.","Can you provide me with a report that shows the number of unique users engaged in learning activities each day, broken down by their subscription type? Please make sure to exclude any biased user data and only count activities related to submissions, excluding text-based steps, for the past 28 weeks."
 "--
 WITH
 
@@ -990,7 +1235,22 @@ SELECT
     round(quantiles[3], 2) AS q_75_days,
     round(quantiles[4], 2) AS q_90_days,
     round(quantiles[5], 2) AS q_99_days
-FROM stats;",
+FROM stats;","1. The expected result of the query is a set of quantile values representing the time it takes for users to subscribe after registering. These quantiles are at the 25th, 50th, 75th, 90th, and 99th percentiles.
+
+2. The query is broken down into two logical parts: the 'subs_data' Common Table Expression (CTE) and the 'stats' CTE.
+
+3. 'subs_data' CTE:
+   - Select the 'user_id', 'date_registered', and the minimum creation date between 'sub_personal_dts['created_at_min']' and 'sub_premium_dts['created_at_min']' as 'created_at_min'.
+   - Calculate the difference in days between 'created_at_min' and 'date_registered' as 'days_to_subscribe'.
+   - Filter users who have either a personal or premium subscription and who registered within the last 185 days.
+   - Ensure that 'days_to_subscribe' is greater than or equal to -1.
+
+4. 'stats' CTE:
+   - Calculate the quantiles for the 'days_to_subscribe' column from the 'subs_data' CTE.
+
+5. Final SELECT:
+   - Round the quantile values to two decimal places and alias them as 'q_25_days', 'q_50_days', 'q_75_days', 'q_90_days', and 'q_99_days' respectively.
+   - Retrieve these rounded quantile values from the 'stats' CTE.","Can you provide me with the recent statistics on how quickly users are converting to subscribers after they register? I'm particularly interested in the typical time frames, like the average and the range for the majority, as well as some insights on outliers. It would be great to have this data for the last six months."
 "--
 WITH
 
@@ -1019,7 +1279,27 @@ emails AS (
 )
 
 SELECT *
-FROM emails;",
+FROM emails;","1. The expected result of the query is a list of verified primary email addresses from users who have completed at least one 'dailystep' every day during the 'hour of code' event period, excluding users from Russia and Belarus, and also excluding users who are marked as biased in the 'users_is_biased' table.
+
+2. The query is broken down into two logical parts:
+   a. target_users
+   b. emails
+
+3. Part a - target_users:
+   - Select the 'user_id' from the 'steps_dailystep' table.
+   - Filter records where 'state' equals 1.
+   - Ensure the 'day' falls within the specified event period (between '2022-12-05' and '2022-12-11').
+   - Group the results by 'user_id'.
+   - Apply a HAVING clause to filter only those users who have a unique count of 'day' equal to 7, indicating they completed a step every day of the event.
+
+4. Part b - emails:
+   - Select the 'verified_primary_email' from the 'users' table.
+   - Use the 'dictGetString' function to get the country name associated with the 'country_by_ip_id' and exclude emails from users in 'Russia' and 'Belarus'.
+   - Filter the users by checking if their 'id' is in the list of 'target_users' obtained from part a.
+   - Ensure that the 'verified_primary_email' is not an empty string.
+   - Exclude users whose 'id' is present in the 'users_is_biased' table.
+
+5. Finally, select all records from the 'emails' CTE (Common Table Expression) to get the desired list of email addresses.","Can you provide me with a list of verified primary email addresses for users who participated every day in the 'hour of code' event from December 5th to 11th, 2022? Please exclude any users from Russia and Belarus, and also those who are flagged as biased in our system."
 "WITH
 
 -- get all users who clicked on ide or install_ide
@@ -1035,7 +1315,21 @@ result AS (
 )
 
 SELECT *
-FROM result;",
+FROM result;","1. Describe the expected query result: The query will return a distinct list of user IDs who have clicked on either 'ide' or 'install_ide' within the last month, excluding those who are listed in the 'users_is_biased' table.
+
+2. Break down the query into logical parts: The query consists of two main parts - a Common Table Expression (CTE) named 'result' and the main SELECT statement.
+
+3. Part descriptions:
+
+- Common Table Expression (CTE) 'result':
+  a. Select the distinct 'user_id' from the 'hyperskill.content' table.
+  b. Filter the records where the 'date' is within the last month from the current date.
+  c. Include only those records where the 'action' column is equal to 'click'.
+  d. Further filter the records to include only those where the 'target' column is either 'ide' or 'install_ide'.
+  e. Exclude any 'user_id' that exists in the 'hyperskill.users_is_biased' table.
+
+- Main SELECT statement:
+  a. Retrieve all records from the CTE 'result'.","Can you provide me with a list of unique users who have clicked on 'ide' or 'install_ide' in the past month, but make sure to exclude any users who might have biased interactions according to our internal records?"
 "-- https://vyahhi.myjetbrains.com/youtrack/issue/AN-1951/Unload-the-users-who-clicked-on-the-payment-transition
 
 -- Users who clicked on the buttons to go to Checkout
@@ -1071,7 +1365,13 @@ WHERE
     AND user_id NOT IN (SELECT user_id FROM hyperskill.users_is_biased)
     AND user_id IN (SELECT user_id FROM clicked_on_the_payment_transition)
     AND email NOT LIKE '%\+%'
-    AND email != '';",
+    AND email != '';","The expected result of the query is a list of emails and countries of users who clicked on the payment transition buttons to go to Checkout on the Hyperskill platform during the period from October 11 to October 18, 2023.
+
+The query is broken down into the following logical parts:
+
+1. Date Range Definition: Define the start and end dates for the period of interest.
+2. Clicked Payment Transition Subquery: Create a subquery to select user IDs from the 'hyperskill.content' table where the 'date' is between the defined start and end dates, the 'action' is a 'click', the 'page_part' is 'subscription_plan', the 'target' is one of 'start_premium', 'start_subscription', or 'start_your_subscription', and the 'frontend_context' is a JSON object with a 'provider' key set to 'stripe'.
+3. Main Query: Select the 'verified_primary_email' and 'country' from the 'hyperskill_private.registered_users' table where the user is not biased, not a superuser, not in the list of biased users from 'hyperskill.users_is_biased', clicked on the payment transition as identified by the subquery, the email does not contain a '+' character, and the email is not an empty string. Use COALESCE to ensure that if 'country' is NULL, 'first_country' is used instead.","Can you provide me with a list of emails and countries for users who clicked on our payment transition buttons leading to Checkout on Hyperskill between October 11th and 18th? We're particularly interested in those who used Stripe as their payment provider. Please exclude any biased users, superusers, or those with non-standard email addresses."
 "SELECT
     email,
     date_registered
@@ -1084,7 +1384,17 @@ WHERE
     AND
         (sub_org_str_map != '{}'
              OR sub_org_member_str_map != '{}'
-             OR sub_org_trial_str_map != '{}')",
+             OR sub_org_trial_str_map != '{}')","The query is designed to retrieve a list of users with specific criteria. The expected result is a set of records containing the users' email addresses and their registration dates.
+
+1. Selection Criteria: The query will filter users based on several conditions using the columns 'is_biased', 'is_superuser', 'id', and 'country'.
+
+2. Subquery Exclusion: A subquery will be used to exclude users whose 'id' appears in the 'user_id' column of the 'hyperskill.users_is_biased' table.
+
+3. Country Exclusion: Users from certain countries ('Russia', 'Belarus') will be excluded by checking the 'country' column.
+
+4. JSON Data Check: The query will include users who have non-empty JSON data in at least one of the columns 'sub_org_str_map', 'sub_org_member_str_map', or 'sub_org_trial_str_map'.
+
+Each part of the query contributes to narrowing down the list of users to those who meet all the specified conditions.","Can you provide me with a list of users who are not biased, not superusers, and not from Russia or Belarus? Also, make sure they have some data in their organization-related fields. I need their email addresses and registration dates."
 "-- https://vyahhi.myjetbrains.com/youtrack/issue/AN-1927/Dashboard-to-track-Mobile-Premium-DLU
 
 
@@ -1207,7 +1517,47 @@ SELECT
     user_type,
     first_click_channel,
     platform
-FROM learning_users;",
+FROM learning_users;","1. Describe the expected query result:
+- The query will create or replace a view named 'hyperskill_reports.learning_users'.
+- The view will contain columns for date, user_id, registration_date, week_cohort, month_cohort, user_type, first_click_channel, and platform.
+- The view will represent data about learning users, their subscription status, and platform usage.
+
+2. Break down the query into logical parts:
+- Part A: first_purchase_dates
+- Part B: user_subscriptions
+- Part C: user_activity
+- Part D: learning_users
+- Part E: Final SELECT statement to create the view
+
+3. Description of each part without code:
+
+Part A: first_purchase_dates
+- Select the minimum transaction date as the first paid transaction date for each user from the sales table.
+- Filter for transactions with a positive amount in USD cents and product types 'personal' or 'premium'.
+- Exclude users with an ID less than or equal to zero.
+- Group the results by user ID.
+
+Part B: user_subscriptions
+- Select user IDs and an array of subscription start and end dates.
+- Adjust the subscription start date to the actual first payment date for users who had a 100% discount for the first month and then bought a subscription.
+- Join with the first_purchase_dates to get the first paid transaction date.
+- Filter for enabled subscriptions of types 'premium' or 'personal' that are not deleted and have a user count greater than zero.
+- Exclude biased user IDs.
+- Group the results by user ID.
+
+Part C: user_activity
+- Select distinct records of user activity including date, user ID, registration date, week cohort, month cohort, last subscription type on date, first click channel, and platform.
+- Filter for activity within the last 28 weeks up to yesterday.
+- Exclude biased user IDs and text step types.
+- Include actions related to submissions.
+
+Part D: learning_users
+- Combine user activity with subscription data.
+- Determine if the date falls within any of the user's paid subscription periods.
+- Adjust the user type to 'Premium (100% discount)' for users with a 'Premium' type who are not in a paid period.
+
+Part E: Final SELECT statement to create the view
+- Select the necessary columns from the learning_users part to form the final view.","Can you provide a report view that shows the activity and subscription details of our learning users, including their first payment date, subscription status, and the platform they use? We're particularly interested in data from the last 28 weeks."
 "
 -- https://vyahhi.myjetbrains.com/youtrack/issue/AN-1941/Explore-Try-out-projects-for-free-banner
 
@@ -1533,7 +1883,27 @@ events AS (
 SELECT
     *
 FROM events;
-",
+","Describe the expected query result:
+- The query is designed to create a view that will contain a series of events related to user interactions with a specific banner (banner_id 73) on the Hyperskill platform. The view will track user actions from seeing the banner to potentially starting a premium subscription.
+
+2. Break down the query into logical parts:
+- Part A: Subquery to identify users who have viewed the banner.
+- Part B: Main query to collect distinct events for users who viewed the banner.
+
+3. Write a short description for each part using column names:
+
+Part A: Subquery (viewed_banner)
+- Select the user_id from the 'hyperskill.content' table.
+- Filter records where the action is 'shown', the page is like '/study-plan%', the target is 'banner', the subscription_type is 'freemium', and the banner_id is 73 extracted from the frontend_context JSON field.
+
+Part B: Main query (events)
+- Select distinct records with columns dt, user_id, action, page, target, page_part.
+- Use a multiIf function to categorize events based on action, target, and page_part.
+- Include events such as banner shown, clicked on banner, viewed the first stage, tried the first stage, completed the first stage, viewed modal after stage completion, and clicked on modal get premium.
+- Join the subquery on user_id to filter events for users who have seen the banner.
+- Order the results by user_id and date.
+
+- Finally, select all records from the events subquery to be included in the view 'hyperskill_reports.banners__banner_73_first_stage__events'.","Can we get a report on how users are interacting with banner 73 on the Hyperskill platform? Specifically, I'm interested in tracking their journey from seeing the banner to starting a premium subscription, including any clicks and actions on the first stage after seeing the banner."
 "-- Reached daily limit in registration day, %, after first track selection.
 WITH
 today() - 28 * 4 AS start_from_period,
@@ -1650,7 +2020,31 @@ GROUP BY
     first_track_selection_dt,
     track_id,
     selected_track_id
-HAVING first_track_selection_dt >= '2021-01-01'",
+HAVING first_track_selection_dt >= '2021-01-01'","1. Define the expected result of the query: The query is expected to return a list of users who have selected their first track within a specific time frame, along with the date of registration, the date of first track selection, the track ID, the track title, and indicators for whether they reached the daily limit on the day of track selection and whether they completed a step on the next day after track selection.
+
+2. Break down the query into logical parts:
+   - Calculation of the start date for the period of interest.
+   - Subquery to identify the first track selection for each user.
+   - Main query to retrieve user details and calculate indicators for daily limit reached and next day retention.
+
+3. Description of each part without code:
+   - Calculate the start date by subtracting 112 days (28 days multiplied by 4) from the current date to define the period of interest for the analysis.
+   - Create a subquery (user_first_track_selection) that selects users based on the following criteria:
+     - The user's action must be 'selected_track'.
+     - The user's registration date and the date of the action must be within the period of interest.
+     - Group the results by user_id and registration_date.
+     - For each user, determine the earliest date and time (first_track_selection_dt) they selected a track and the corresponding track ID (first_track_selection_id).
+     - Calculate the difference in hours between the first track selection and the registration date (diff_hours).
+     - Filter out users whose first track selection occurred more than 2 hours before or after their registration date.
+   - In the main query:
+     - Join the subquery results with the hyperskill.content table using the user_id.
+     - Filter actions to include 'registered_user', 'selected_track', 'reached_limit', and 'completed_step', and ensure the dates are within the adjusted period of interest.
+     - Group the results by user_id, registration_date, first_track_selection_dt, track_id, and selected_track_id.
+     - Retrieve the track title using a dictionary lookup with a default message if the track does not exist.
+     - Calculate two indicators:
+       - day_0_limit_reached: Whether the user reached the daily limit within 24 hours after track selection.
+       - day_1_retained: Whether the user completed a step on the next day after track selection.
+     - Filter the final results to include only track selections that occurred on or after January 1, 2021.","Can you provide me with a list of users who started their first track within the last four weeks? I need to see their registration date, the date they picked their first track, the track ID and title, and also if they hit the daily limit on the same day and if they completed a step the following day. Please only include those who selected their first track after January 1, 2021."
 "WITH
 today() AS some_date,
 step_publication_dt AS (
@@ -1780,7 +2174,26 @@ step_stats AS (
 SELECT *
 FROM step_stats
 WHERE is_reached_enough_users = 1
-  AND is_good_quality = 1;",
+  AND is_good_quality = 1;","1. The query result to be expected:
+The query is divided into two parts: one for the theory tab and one for the practice tab. For each tab, it returns the average click rate for different elements (such as comments, hints, user links, show discussion, solutions, see hint) over the past six months.
+
+2. Break down the query into logical parts:
+- Part 1: Calculate statistics for the theory tab
+- Part 2: Calculate statistics for the practice tab
+
+3. Description for each part:
+
+Part 1: Calculate statistics for the theory tab
+- Create a subquery ""theories"" to select step_id and topic_id from the stg_steps table where step_type is 'text'.
+- Create a subquery ""actions_stat_on_theory"" to calculate the number of unique users who visited, clicked on comments, clicked on useful links, and clicked on show discussion from the content table where the action is 'click' and the step_id is in the ""theories"" subquery. Also, calculate the click rate for each of these actions.
+- Create a subquery ""objects_stat_on_theory"" to calculate the average click rate for comments, useful links, and show discussion.
+- Finally, select all records from the ""objects_stat_on_theory"" subquery.
+
+Part 2: Calculate statistics for the practice tab
+- Create a subquery ""problems"" to select step_id and topic_id from the stg_steps table where step_type is not 'text' and topic_id is greater than 0.
+- Create a subquery ""actions_stat_on_problems"" to calculate the number of unique users who visited, clicked on comments, clicked on useful links, clicked on show discussion, clicked on solutions, clicked on hints, and clicked on see hint from the content table where the action is 'click' and the step_id is in the ""problems"" subquery. Also, calculate the click rate for each of these actions.
+- Create a subquery ""objects_stat_on_problems"" to calculate the average click rate for comments, useful links, show discussion, solutions, hints, and see hint.
+- Finally, select all records from the ""objects_stat_on_problems"" subquery.","Can we get a report on how users have been interacting with different elements on our platform? Specifically, I'd like to see the average click rates for comments, hints, and other interactive features on both the theory and practice sections over the last six months."
 "WITH
 
 map(
@@ -1812,7 +2225,22 @@ SELECT
 FROM hyperskill.polls
 WHERE poll_id = 4
 GROUP BY track_title, experience, motivation
-ORDER BY track_title, experience, motivation DESC;",
+ORDER BY track_title, experience, motivation DESC;","1. The expected result of the query is a list of tracks with the titles, user experience levels, user motivations for learning, and the count of unique users who answered the poll.
+
+2. The logical parts of the query are:
+   - Common Table Expressions (CTEs) for mapping poll answers to descriptive text
+   - Selection of data from the polls table
+   - Aggregation of data to count unique users
+   - Ordering of the result set
+
+3. Part descriptions:
+   - Define two CTEs, one for mapping question 1 answers to experience levels and another for mapping question 2 answers to motivations.
+   - Select the track title by converting the selected_track_id to a string using a dictionary lookup, and if the track does not exist, return a default message.
+   - Use the CTEs to translate the numeric answers from polls.question_1 and polls.question_2 into descriptive text for experience and motivation.
+   - Count the unique user_id values for each combination of track title, experience, and motivation.
+   - Filter the results to include only entries from poll_id 4.
+   - Group the results by track title, experience, and motivation.
+   - Order the final result set by track title, and then by experience and motivation in descending order.","Can we get a breakdown of the number of unique users by track title, their experience level, and motivation for learning from the latest poll? We're interested in understanding user demographics and preferences for our learning tracks."
 " -- int_users__first_diagnostics_activity_conversions.sql
 
 WITH
@@ -2161,7 +2589,17 @@ WHERE
 GROUP BY user_id, project_id, track_id
 ORDER BY user_id
 
--- ",
+-- ","The query is broken down into three main parts:
+
+1. User Diagnostics Activity: This part focuses on capturing the first occurrence of various diagnostic-related actions by users, such as selecting a track or project, starting diagnostics, skipping diagnostics, viewing a diagnostics step, attempting to solve a diagnostics step, and completing diagnostics.
+
+2. Users Diagnostics Conversions: This part joins the user diagnostics activity with additional metrics to determine whether certain actions occurred within specific time frames after registration or starting diagnostics. It also calculates various flags indicating whether a user has performed certain actions like selecting, starting, or completing diagnostics.
+
+3. User Topics Activity and Conversions: This part captures user interactions with topics, including skipping topics, attempting to skip topics, verifying topics, completing topics, and viewing theory. It also calculates metrics such as the date of topic completion or skip, the date of the first submission for a topic, the failure rate by steps, and the count of completed steps.
+
+4. User Topics Unskip Dates: This part aggregates dates when users unskipped topics in their study plan, topic theory page, or knowledge map.
+
+Each part uses various SQL functions and clauses to filter, aggregate, and compute the desired metrics based on user actions recorded in the Hyperskill content database. The query uses common table expressions (CTEs), joins, conditional logic, and aggregation functions to build the final dataset.","Can you provide me with a report on how our users are interacting with the diagnostic tools and topics? I'm interested in when they first start using these features, if they're completing them, and how they're progressing. Also, could you track any instances where users go back to previously skipped topics?"
 "WITH topic_stats AS (SELECT topic_id,
                             uniqExact(user_id)                                     AS completed_step_users,
                             row_number() over (order by completed_step_users DESC) AS topic_rank
@@ -2187,7 +2625,25 @@ ORDER BY user_id
 SELECT topic_id,
        completed_step_users
 FROM topic_stats
-WHERE topic_rank <= (SELECT topics_count FROM max_rank) * 0.1;",
+WHERE topic_rank <= (SELECT topics_count FROM max_rank) * 0.1;","1. The expected result of the query is a list of topic IDs and the number of unique users who have completed a step or submission for each topic, ranked by the number of completed users. Only the top 10% of topics by this rank will be returned.
+
+2. The query is broken down into two logical parts: 
+   - topic_stats
+   - max_rank
+
+3. Part 'topic_stats':
+   - Select the 'topic_id' and count the distinct 'user_id' as 'completed_step_users'.
+   - Rank the topics by 'completed_step_users' in descending order using the 'row_number()' function, naming this rank as 'topic_rank'.
+   - Filter the data where 'dt' is within the last 84 days, 'action' is either 'completed_submission' or 'completed_step', 'topic_id' is greater than 0, 'step_type' is not 'text', and 'solving_context' is either empty or 'default'.
+   - Further filter 'topic_id' to include only those present in a subquery from 'hyperskill.stg_topics' where 'is_enabled' is 1, 'is_group' is 0, 'is_manual_disabled' is 0, 'has_steps' is 1, and 'deleted_at' is null.
+   - Group the results by 'topic_id' and order them by 'completed_step_users' in descending order.
+
+4. Part 'max_rank':
+   - Select the maximum value of 'topic_rank' from 'topic_stats' as 'topics_count'.
+
+5. Final Selection:
+   - Select 'topic_id' and 'completed_step_users' from 'topic_stats'.
+   - Limit the results to those where 'topic_rank' is less than or equal to 10% of 'topics_count' obtained from 'max_rank'.","Can you provide me with a list of our most engaging topics? Specifically, I'd like to see which topics have the highest number of unique users completing steps or submissions in the last three months. It would be great if you could narrow it down to the top 10% of topics based on user engagement. Please ensure that the topics considered are currently enabled, not part of a group, not manually disabled, have steps, and are not deleted."
 "-- days between registration and first premium subscription for new users
 SELECT
     median(dateDiff('day', registration_date, date)) AS median,
@@ -2198,7 +2654,17 @@ FROM hyperskill.content
 WHERE action like '%created_subscription%'
   AND date >= today() - 28 * 3
   AND dt_registered >= today() - 28 * 3
-  AND subscription_type = 'premium';",
+  AND subscription_type = 'premium';","1. Describe the expected query result: The query will calculate statistical measures (median, average, 75th percentile, and 90th percentile) of the number of days between the registration date and the date of the first premium subscription for new users.
+
+2. Logical parts of the query: The query consists of the following parts:
+   - Selection of relevant columns and calculation of date differences
+   - Filtering conditions
+   - Aggregation functions to calculate statistical measures
+
+3. Description of each part:
+   - Selection and calculation: We will select users whose actions indicate the creation of a subscription and calculate the difference in days between their 'registration_date' and the 'date' of the action.
+   - Filtering conditions: We will apply filters to include only actions related to 'created_subscription', ensure the 'date' of the action and 'dt_registered' are within the last 84 days (28 days * 3), and include only users with a 'subscription_type' of 'premium'.
+   - Aggregation functions: We will use aggregation functions to calculate the median, average, 75th percentile, and 90th percentile of the calculated date differences.","Can you provide me with some insights on how quickly new users are deciding to upgrade to a premium subscription? Specifically, I'd like to know the median, average, 75th, and 90th percentile of the number of days it takes from their registration until they first subscribe to premium, but only for the last three months."
 "-- retention from registratio to next day (24-48 hours) activation, view (vist)
 SELECT avg(next_day_retention)      AS next_day_active_retention,
        avg(next_day_view_retention) AS next_day_view_retention
@@ -2220,7 +2686,20 @@ FROM (
            AND is_biased = 0
            AND user_id NOT IN (SELECT user_id FROM hyperskill.users_is_biased)
          GROUP BY user_id, cohort
-         );",
+         );","The expected result of the query is to calculate the average next-day active retention and next-day view retention rates for users who registered within a specific time frame. The query will be broken down into the following logical parts:
+
+1. Subquery (Inner Query):
+   - Select user_id and calculate the cohort date using the dictGetDateTime function.
+   - Calculate next_day_retention by checking if the user completed a step (excluding text steps) between 24 and 48 hours after registration.
+   - Calculate next_day_view_retention by checking if the user had any view action between 24 and 48 hours after registration.
+   - Filter the data to include only actions within the last 84 days (28 days * 3) and registrations between the last 84 days and yesterday.
+   - Exclude superusers and biased users, and also filter out users identified as biased in the hyperskill.users_is_biased table.
+   - Group the results by user_id and cohort.
+
+2. Outer Query:
+   - Calculate the average of next_day_retention and next_day_view_retention from the subquery results.
+
+Column names to be used include: user_id, date_registered, dt, dt_registered, action, step_type, is_superuser, is_biased, and next_day_retention, next_day_view_retention.","Can you provide me with the average rates of users coming back the next day to complete a step and to view content after they've registered? I'm interested in the data for users who signed up in the last three months, but please exclude any superusers or users flagged as biased."
 "-- Active users count for each track for last 3 month, 1 month, 1 month with subscription info
 SELECT selected_track_id,
        dictGetString('hyperskill.tracks_track_dict', 'title', toUInt64(selected_track_id)) AS track_title,
@@ -2254,7 +2733,23 @@ WHERE (date >= (today() - toIntervalMonth(3)))
   AND (user_id > 0)
   AND (track_id > 0)
 GROUP BY selected_track_id
-ORDER BY active_last_1_month DESC;",
+ORDER BY active_last_1_month DESC;","1. The expected result of the query is a list of tracks with their titles, along with the count of unique active users for each track over different time periods: the last 3 months, the last month, and the last month broken down by different subscription types (personal, premium, free, freemium, trial, organization trial, commercial, team member).
+
+2. The logical parts of the query are:
+   - Track Identification
+   - Active User Counts
+   - Subscription Type Breakdown
+   - Filtering Criteria
+   - Exclusion of Biased Users
+   - Grouping and Ordering
+
+3. Descriptions for each part:
+   - Track Identification: Retrieve the 'selected_track_id' and its corresponding 'track_title' using a dictionary function.
+   - Active User Counts: Calculate the unique count of 'user_id' for the last 3 months and the last month.
+   - Subscription Type Breakdown: Calculate the unique count of 'user_id' for the last month, further broken down by 'subscription_type' categories.
+   - Filtering Criteria: Apply filters based on 'date', 'action', 'step_type', 'solving_context', 'selected_track_id', 'track_id', 'dt_registered', and 'is_enabled' flag from a dictionary.
+   - Exclusion of Biased Users: Exclude 'user_id's that are listed in the 'hyperskill.users_is_biased' table.
+   - Grouping and Ordering: Group the results by 'selected_track_id' and order by the count of active users in the last month in descending order.","Can you provide me with a report on how many unique users have been active on each track over the past three months, the past month, and also a breakdown by subscription type for the last month? Please exclude any biased users from the count and rank the tracks by the number of active users in the last month."
 "WITH subs AS (SELECT user_id,
                      valid_till AS sub_valid_till,
                      is_auto_renewal
@@ -2287,7 +2782,17 @@ SELECT *
 FROM subs
          LEFT JOIN users USING user_id
 WHERE user_id > 0
-ORDER BY sub_valid_till;",
+ORDER BY sub_valid_till;","1. Describe the expected query result: The query is expected to return a list of users with annual personal subscriptions that are valid between October 1, 2023, and November 30, 2023, who have not closed their subscriptions too early (more than 300 days), do not have any other subscriptions starting from October 1, 2023, and are registered users. The result will include subscription details, user details, and will be ordered by the subscription's valid till date.
+
+2. Break down the query into logical parts: The query consists of two Common Table Expressions (CTEs) and a final SELECT statement.
+
+3. Part descriptions:
+
+- CTE 'subs': This part will select user IDs, subscription valid till dates, and auto-renewal status from the 'stg_subscriptions' table where the subscription period is 'annual', the type is 'personal', the valid till date is between October 1, 2023, and November 30, 2023, the subscription duration is more than 300 days, and the user does not have any other 'personal' or 'premium' subscriptions starting on or after October 1, 2023.
+
+- CTE 'users': This part will select user details such as user ID, email, selected track, passed problems, date registered, activity status for the last 1, 2, and 3 months, country, and marketing subscription status from the 'registered_users' table where the user ID is in the list obtained from the 'subs' CTE.
+
+- Final SELECT statement: This part will combine the results from the 'subs' and 'users' CTEs using a LEFT JOIN on the user ID, filter out any records with a user ID less than or equal to 0, and order the final result by the subscription's valid till date.","Can you provide me with a list of registered users who have an active annual personal subscription valid between October 1 and November 30, 2023, and who haven't canceled their subscriptions prematurely? Please ensure these users don't have any other subscriptions starting from October 1, and include their subscription details, personal details, and sort the list by the subscription end date."
 "-- https://vyahhi.myjetbrains.com/youtrack/issue/AN-1828/
 -- Measure the effect of reactivation:
 -- * How many users reactivated daily?
@@ -2468,7 +2973,38 @@ result AS (
 
 SELECT
     *
-FROM result;",
+FROM result;","The query is designed to create a view named 'hyperskill_reports.reactivated_users' that will provide insights into user reactivation, retention, and subscription purchases on the Hyperskill platform. The expected result is a comprehensive dataset that includes user IDs, registration dates, reactivation dates, retention metrics, subscription information, and UTM parameters for marketing analysis.
+
+The query is broken down into the following logical parts:
+1. Constants Definition
+2. Users Submissions
+3. Users Data
+4. Reactivation Dates
+5. Reactivation Retention
+6. New Subscriptions
+7. UTM Parameters
+8. Final Result Combination
+9. View Creation
+
+Each part is briefly described below using the specified column names:
+
+1. Constants Definition: Define constants 'calculation_depth_days' and 'reactivation_window' to be used in the query.
+
+2. Users Submissions: Select distinct user submissions, filtering by date, action types, and excluding superusers and biased users. Order by user ID and date.
+
+3. Users Data: For each user, select the user ID, registration date, submission date, and calculate the previous submission date.
+
+4. Reactivation Dates: Identify reactivation dates for users by comparing submission dates with previous submission dates and registration dates.
+
+5. Reactivation Retention: Calculate retention metrics for reactivated users by comparing submission dates with reactivation dates at various intervals.
+
+6. New Subscriptions: Aggregate subscription data for users, including the date of the first subscription, revenue, revenue within the first 10 days, and the number of purchases.
+
+7. UTM Parameters: Select the last click UTM parameters for marketing campaign analysis.
+
+8. Final Result Combination: Combine all the metrics from the previous parts into a single dataset, including user IDs, registration dates, reactivation dates, retention metrics, subscription information, and UTM parameters.
+
+9. View Creation: Create the view 'hyperskill_reports.reactivated_users' with the dataset obtained from the final result combination.","Can we get a report on users who have come back to Hyperskill after a break? It would be great to see when they re-registered, how well they're sticking with the platform, and if they're buying any subscriptions. Also, if we could understand which marketing campaigns brought them back, that would be super helpful for our strategy."
 "WITH
 
 subscriptions AS (
@@ -2556,7 +3092,26 @@ WHERE
 
 SELECT
     *
-FROM result_1;",
+FROM result_1;","The query is designed to generate three separate lists of user emails based on different criteria related to their subscription status. The final output will be the first list of emails.
+
+1. Common Table Expression (CTE) - subscriptions:
+   - Select user details from the 'hyperskill_private.registered_users' table.
+   - Filter out biased users, superusers, and users from specific countries.
+   - Extract minimum creation dates for personal, premium, and freemium subscriptions.
+   - Include additional subscription-related fields and the date of registration.
+
+2. CTE - result_1:
+   - From the 'subscriptions' CTE, select emails of users who have purchased a personal or premium subscription between specific dates.
+   - Include users who have a relevant subscription history in 'hyperskill_private.stg_subscriptions__hist'.
+
+3. CTE - result_2:
+   - From the 'subscriptions' CTE, select emails of users who registered after a specific date and have no subscription history, excluding freemium users.
+
+4. CTE - result_3:
+   - From the 'subscriptions' CTE, select emails of users who currently have a valid paid subscription or have purchased an annual subscription since a specific date.
+
+5. Final Selection:
+   - Retrieve all records from 'result_1' CTE.",Can you provide me with a list of emails for users who have recently purchased a personal or premium subscription? We're looking to target a campaign for users who've shown interest in our paid plans between certain dates and have a history of relevant subscriptions.
 "-- File 1: AN-1648-mvp-rfm-features.sql
 
 
@@ -2835,4 +3390,26 @@ SELECT
     users_in_segment / users * 100 AS percent
 FROM rfm_data;
 
-",
+","1. The expected result of the query is a dataset containing features for RFM (Recency, Frequency, Monetary) segmentation of users who registered last year with a personal subscription. The dataset will include user identifiers, email addresses, geographical and TALG (Tell About Learning Goals) data, platform usage, problem-solving activity, purchase history, learning days, and email engagement metrics.
+
+2. The logical parts of the query are:
+- talg_data
+- user_activity
+- user_features
+- rfm_quantiles
+- users_rfm_scores
+- rfm_segments_statistics
+- recency_distribution
+- frequency_distribution
+- monetary_distribution
+
+3. Part descriptions:
+- talg_data: Extracts unique user responses to two specific questions from the 'polls' table, filtering by a particular poll_id and poll name.
+- user_activity: Aggregates user actions from the 'content' table, calculating the last submission date, number of learning days, passed problems, read emails, and used platforms, excluding biased users and considering only specific actions.
+- user_features: Combines user information from 'registered_users' with talg_data and user_activity, filtering out biased users and B2B users, and calculating various metrics such as days since last submission, days since last personal subscription start, and revenue.
+- rfm_quantiles: Determines the quantiles for various metrics like days since last submission, passed problems, learning days, and revenue, based on users with personal subscriptions.
+- users_rfm_scores: Joins the users' RFM features with the quantiles to calculate RFM scores for each user.
+- rfm_segments_statistics: Calculates the distribution of users across different RFM scores.
+- recency_distribution: Calculates the distribution of users across different recency scores.
+- frequency_distribution: Calculates the distribution of users across different frequency scores.
+- monetary_distribution: Calculates the distribution of users across different monetary scores.","Can we get a breakdown of our user engagement over the past year for those with personal subscriptions? Specifically, I'm interested in understanding their activity patterns, how often they're using the platform, and their spending behavior. It would be great to have this segmented by how recently they've engaged, how frequently, and how much they've spent."

@@ -24,22 +24,25 @@ def handler(signum, frame):
 logging.basicConfig(level=logging.INFO)
 
 PATH_TO_ROOT = Path(__file__).parent.parent.parent
+PATH_TO_DATASET = Path(
+    PATH_TO_ROOT / "data" / "datasets" / "sql_queries.csv"
+)
 functions = DB(PATH_TO_ROOT / "data" / "functions")
 send_sql_plan = functions["send_sql_plan.json"] or "{}"
 prompts = DB(PATH_TO_ROOT / "data" / "prompts")
 system_prompt: str = prompts["sql_query_plan"] or ""
-PATH_TO_DATASET = Path(
-    PATH_TO_ROOT / "data" / "datasets" / "sql_queries.csv"
-)
 
 if send_sql_plan == "" or system_prompt == "":
     raise ValueError("Please, check if you have functions and prompts in data folder.")
 
 
-def convert_via_promt(targets: list[str], prompt: str, **kwargs) -> list[str | None]:
+def convert_via_promt(
+        targets: list[str], prompt: str, **kwargs
+    ) -> list[str | None]:
     """Convert target into completion."""
     assistent = Assistant()
     result = []
+    PATH_TO_ARTEFACTS = Path(__file__).parent / "artefacts"
 
     for i, query in enumerate(targets):
         if i:
@@ -65,14 +68,23 @@ def convert_via_promt(targets: list[str], prompt: str, **kwargs) -> list[str | N
         finally:
             if response and isinstance(response, str):
                 completion = json.loads(response)
-                k = kwargs \
-                    .get("tool_choice", None).get("function", None).get("name", None)
-                if k in completion:
-                    completion = completion[k]
-                    logging.info(completion)
-                    result.append(completion)
+                value = next(iter(completion.values()))
+
+                if value:
+                    logging.info("--- value: ---")
+                    logging.info(value)
+                    result.append(value)
+                else:
+                    logging.info("--- No completion ---")
+                    logging.info(response)
+                    result.append(None)
             else:
-                result.append(None)
+                raise ValueError("Response is not a string.")
+        try:
+            with PATH_TO_ARTEFACTS.open("w") as file:
+                file.write(json.dumps(result))
+        except Exception:
+            logging.exception("Exception occurred")
 
     return result
 
