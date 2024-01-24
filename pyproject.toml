@@ -14,7 +14,7 @@ structlog = "23.1.0"
 structlog-sentry = "2.0.3"
 tiktoken = "0.5.1"
 openai = "0.28.1"
-trafilatura = "1.6.2"
+trafilatura = "1.6.4"
 clickhouse_driver = "0.2.6"
 
 [tool.poetry.group.dev.dependencies]
