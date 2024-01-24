@@ -5,6 +5,11 @@ on:
     paths-ignore:
       - "slackbot/tests/**"
       - "README.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
 name: CI
 jobs:
   lint:
@@ -62,8 +67,6 @@ jobs:
     needs:
       - lint
       - type_checking
-    concurrency:
-      group: production
     runs-on: [self-hosted, small]
     steps:
       - name: Checkout code

@@ -1,0 +1,31 @@
+name: Registry Retention Policy
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: registry-retention-policy
+
+jobs:
+  remove-outdated-images:
+    runs-on: [ self-hosted, small ]
+    timeout-minutes: 120
+    steps:
+      - uses: hyperskill/azure-login@v2.0.0
+        with:
+          client_id: ${{ secrets.CLIENT_ID }}
+          client_secret: ${{ secrets.CLIENT_SECRET }}
+          subscription_id: ${{ secrets.SUBSCRIPTION_ID }}
+          tenant_id: ${{ secrets.TENANT_ID }}
+
+      - run: |
+          PURGE_CMD="acr purge \
+            --filter 'hyperskill/dataslackbot:.*' \
+            --ago 1d \
+            --keep 2 \
+            --untagged"
+          az acr run \
+            --cmd "$PURGE_CMD" \
+            --registry hyperskill \
+            /dev/null
