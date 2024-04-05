@@ -283,15 +283,15 @@ def submit_issue(
         str: The URL of the created YouTrack issue.
     """
     func = json.loads(functions["create_issue"] or "{}")
-    openai_response = client.chat.completions.create(  # type: ignore  # noqa: PGH003
-        model=model,  # type: ignore  # noqa: PGH003
+    openai_response = client.chat.completions.create(
+        model=model,
         messages=messages,  # type: ignore  # noqa: PGH003
-        functions=[func],  # type: ignore  # noqa: PGH003
-        function_call={"name": "create_issue"}  # type: ignore  # noqa: PGH003
-    )  # type: ignore  # noqa: PGH003
+        functions=[func],
+        function_call={"name": "create_issue"}
+    )
 
-    arguments = json.loads(  # type: ignore  # noqa: PGH003
-        openai_response.choices[0].message.function_call.arguments,  # type: ignore  # noqa: PGH003, E501
+    arguments = json.loads(
+        openai_response.choices[0].message.function_call.arguments,
         strict=False
     )
 
