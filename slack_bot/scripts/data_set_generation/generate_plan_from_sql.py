@@ -1,7 +1,3 @@
-# generate this .py script for SQL query plan generation:
-# 1. read SQL queries from .csv dataset to pandas dataframe
-# 2. for every query generate "SQL query plan" via slack_bot.assistant import Assistant
-# 3. save dataframe to .csv file
 from __future__ import annotations
 
 import json
@@ -14,12 +10,13 @@ from dotenv import load_dotenv
 
 from slack_bot.assistant import Assistant
 from slack_bot.db import DB
+from slack_bot.exceptions import TimeIsUpError
 
 load_dotenv()
 
 
-def handler(signum, frame):
-    raise Exception("Time is up!")
+def handler(signum, frame) -> None:  # noqa: ANN001
+    raise TimeIsUpError
 
 logging.basicConfig(level=logging.INFO)
 
