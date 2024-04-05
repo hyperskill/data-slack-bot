@@ -1,0 +1,14 @@
+{
+    "name": "send_sql_plan",
+    "description": "Sends SQL query plan to a colleague",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sql_query_plan": {
+                "type": "string",
+                "description": "SQL query plan to send"
+            }
+        },
+        "required": ["sql_query_plan"]
+    }
+}

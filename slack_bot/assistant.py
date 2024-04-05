@@ -2,37 +2,41 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
-import openai
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+client = OpenAI()
 
 if TYPE_CHECKING:
-    from openai.openai_object import OpenAIObject
+    from openai.types.chat import ChatCompletionMessageParam
+
 
 DEFAULT_MODEL = "gpt-4-1106-preview"  # "gpt-3.5-turbo"
 DEFAULT_TEMPERATURE = 0.1
 
 
 class Assistant:
-    def __init__(self, api_token: str | Any) -> None:
-        self.openai = openai
-        self.openai.api_key = api_token
+    def __init__(self) -> None:
+        self.openai = client
 
     def get_completion(
         self,
-        messages: list[dict[str, str]],
+        messages: list[ChatCompletionMessageParam],
         model: str = DEFAULT_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
         **kwargs,
-    ) -> str | dict[str, Any]:
+    ) -> str | None:
         """Get a completion from the OpenAI API."""
-        response: OpenAIObject = self.openai.ChatCompletion.create(  # type: ignore[no-untyped-call] # noqa: E501
+        response = self.openai.chat.completions.create(  # type: ignore[no-untyped-call] # noqa: E501
             model=model, messages=messages, temperature=temperature, **kwargs
         )
-        content = response.choices[0].message["content"]
+        content = response.choices[0].message.content
         arguments = (
-            response.choices[0].message.get("function_call", {}).get("arguments", {})
+            response.choices[0].message.tool_calls[0].function.arguments
         )
 
-        if "functions" in kwargs:
+        if "tools" in kwargs:
             return arguments
 
         return content

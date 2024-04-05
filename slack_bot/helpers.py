@@ -7,9 +7,9 @@ import traceback
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
-import openai
 import tiktoken
 from dotenv import load_dotenv
+from openai import OpenAI
 from trafilatura import extract, fetch_url  # type: ignore[import]
 from trafilatura.settings import use_config  # type: ignore[import]
 
@@ -19,10 +19,10 @@ from slack_bot.db import DB
 from slack_bot.youtrack import YouTrack
 
 load_dotenv()
+client = OpenAI()
 
 
 if TYPE_CHECKING:
-    from openai.openai_object import OpenAIObject
     from slack_bolt import App
 
 newconfig = use_config()
@@ -49,8 +49,6 @@ AN_COMMAND = "an"
 YT_COMMAND = "yt"
 SQL_COMMAND = "sql"
 YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
-
-openai.api_key = OPENAI_API_KEY
 
 
 def extract_url_list(text: str) -> list[str] | None:
@@ -280,18 +278,16 @@ def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) ->
         str: The URL of the created YouTrack issue.
     """
     func = json.loads(functions["create_issue"] or "{}")
-    openai_response = openai.ChatCompletion.create(  # type: ignore[no-untyped-call]
+    openai_response = client.chat.completions.create(
         model=model,
         messages=messages,
         functions=[func],
-        function_call={"name": "create_issue"},
+        function_call={"name": "create_issue"}
     )
 
     arguments = json.loads(
-        openai_response.choices[0]
-        .message.get("function_call", {})
-        .get("arguments", {}),
-        strict=False,
+        openai_response.choices[0].message.function_call.arguments,
+        strict=False
     )
 
     yt = YouTrack(
@@ -324,7 +320,7 @@ def generate_sql(problem: str, model: str) -> str:
     Raises:
         Exception: If there was an error executing the generated SQL query.
     """
-    assistant = Assistant(os.environ.get("OPENAI_API_KEY"))
+    assistant = Assistant()
     ch_client = ClickHouse().client
 
     dev_shots = [
@@ -467,10 +463,8 @@ def make_ai_response(
                 model=model,
             )
         else:
-            completion: OpenAIObject = openai.ChatCompletion.create(  # type: ignore[no-untyped-call] # noqa: E501
-                model=model, messages=messages
-            )
-            response_text = completion.choices[0].message["content"]
+            completion = client.chat.completions.create(model=model, messages=messages)
+            response_text = completion.choices[0].message.content
 
         app.client.chat_update(
             channel=channel_id, ts=reply_message_ts, text=response_text

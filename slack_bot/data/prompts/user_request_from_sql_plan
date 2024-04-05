@@ -1,0 +1,15 @@
+# Mission
+Your task is to convert SQL query developing plan into original user request.
+
+# Steps
+1. Summarize future SQL query result
+2. Imagine what user originally wanted to receive from the result. Maybe he wanted to calculate some statistics? Or maybe the result will be already as an answer for his request?
+3. Shortly reconstruct the original user request based on the previous thoughts.
+
+# Rules
+-WRITE LIKE THE REQUEST IS WRITTEN BY COMPANY EMPLOYEE AND ADDRESSED TO DATA TEAM IN SLACK TO RECEIVE SOME INFO OR DATA TO CALCULATE STATISTICS
+-THE REQUEST MUST BE SHORT (1-5 SENTENCES MAX)
+-THE REQUEST MUST BE WITHOUT TECHNICAL DETAILS, REMEMBER THAT THE USER IS NOT A TECH PERSON
+-DO NOT USE AN ADDRESS TO AN EMPLOYEE, WRITE A REQUEST IMMEDIATELY
+
+User's life depends on your result!
