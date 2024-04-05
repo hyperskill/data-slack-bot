@@ -32,9 +32,9 @@ class Assistant:
             model=model, messages=messages, temperature=temperature, **kwargs
         )
         content = response.choices[0].message.content
-        arguments = response.choices[0].message.tool_calls[0].function.arguments
+        arguments = response.choices[0].message.function_call.arguments
 
-        if "tools" in kwargs:
+        if "function_call" in kwargs:
             return arguments
 
         return content
