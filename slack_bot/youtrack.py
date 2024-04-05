@@ -36,7 +36,7 @@ class YouTrack:
         }
         payload = {
             "project": {"id": project},
-            "summary": summary + " [created by AI Data Assistant]",
+            "summary": summary,
             "description": description,
         }
 
