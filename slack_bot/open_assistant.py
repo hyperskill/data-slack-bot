@@ -31,7 +31,7 @@ class OpenAssistant:
         required_actions: list[str] | None=None,
         tools: list[Tool] | None=None,
     ) -> None:
-        self.model = model,
+        self.model = model
         self.required_actions = required_actions
         self.tools = tools
         self.assistant = assistant
