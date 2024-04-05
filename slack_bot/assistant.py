@@ -28,7 +28,7 @@ class Assistant:
         **kwargs,
     ) -> str | None:
         """Get a completion from the OpenAI API."""
-        response = self.openai.chat.completions.create(  # type: ignore[no-untyped-call] # noqa: E501
+        response = self.openai.chat.completions.create(
             model=model, messages=messages, temperature=temperature, **kwargs
         )
         content = response.choices[0].message.content

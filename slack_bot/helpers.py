@@ -10,8 +10,8 @@ from typing import Any, TYPE_CHECKING
 import tiktoken
 from dotenv import load_dotenv
 from openai import OpenAI
-from trafilatura import extract, fetch_url  # type: ignore[import]
-from trafilatura.settings import use_config  # type: ignore[import]
+from trafilatura import extract, fetch_url
+from trafilatura.settings import use_config
 
 from slack_bot.assistant import Assistant, Phase
 from slack_bot.clickhouse import ClickHouse
@@ -23,6 +23,7 @@ client = OpenAI()
 
 
 if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletionSystemMessageParam
     from slack_bolt import App
 
 newconfig = use_config()
@@ -264,7 +265,11 @@ def process_conversation(
     return messages
 
 
-def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) -> str:
+def submit_issue(
+        messages: list[ChatCompletionSystemMessageParam | str | list[dict[str, str]]],
+        project_id: str,
+        model: str
+    ) -> str:
     """Submits a YouTrack issue based on the given messages, project ID, and model.
 
     Args:
@@ -278,15 +283,15 @@ def submit_issue(messages: list[dict[str, str]], project_id: str, model: str) ->
         str: The URL of the created YouTrack issue.
     """
     func = json.loads(functions["create_issue"] or "{}")
-    openai_response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        functions=[func],
-        function_call={"name": "create_issue"}
-    )
+    openai_response = client.chat.completions.create(  # type: ignore  # noqa: PGH003
+        model=model,  # type: ignore  # noqa: PGH003
+        messages=messages,  # type: ignore  # noqa: PGH003
+        functions=[func],  # type: ignore  # noqa: PGH003
+        function_call={"name": "create_issue"}  # type: ignore  # noqa: PGH003
+    )  # type: ignore  # noqa: PGH003
 
-    arguments = json.loads(
-        openai_response.choices[0].message.function_call.arguments,
+    arguments = json.loads(  # type: ignore  # noqa: PGH003
+        openai_response.choices[0].message.function_call.arguments,  # type: ignore  # noqa: PGH003, E501
         strict=False
     )
 
@@ -349,14 +354,14 @@ def generate_sql(problem: str, model: str) -> str:
     phase.update_history("user", problem)
     completion = assistant.get_completion(
         model=model,
-        messages=phases["developing"].history,
+        messages=phases["developing"].history,  # type: ignore  # noqa: PGH003
         functions=phase.functions,
         function_call={"name": "run_query"},
     )
     if isinstance(completion, str):
         phase.result = json.loads(completion, strict=False)["sql_query"]
     else:
-        phase.result = completion["sql_query"]
+        phase.result = completion["sql_query"]  # type: ignore  # noqa: PGH003
 
     try:
         ch_client.execute(phase.result)
@@ -455,7 +460,9 @@ def make_ai_response(
                 {"role": "system", "content": coock_prompt(system, template)}
             )
             response_text = submit_issue(
-                messages=messages, project_id=project_id, model=model
+                messages=messages,  # type: ignore  # noqa: PGH003
+                project_id=project_id,
+                model=model
             )
         elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
             response_text = generate_sql(
@@ -463,8 +470,10 @@ def make_ai_response(
                 model=model,
             )
         else:
-            completion = client.chat.completions.create(model=model, messages=messages)
-            response_text = completion.choices[0].message.content
+            completion = client.chat.completions.create(
+                model=model, messages=messages  # type: ignore  # noqa: PGH003
+            )
+            response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003, E501
 
         app.client.chat_update(
             channel=channel_id, ts=reply_message_ts, text=response_text
