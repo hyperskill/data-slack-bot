@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 
-import pandas as pd  # type: ignore
+import pandas as pd
 from dotenv import load_dotenv
 from generate_plan_from_sql import convert_via_promt
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from os import environ as env
 
-from clickhouse_driver import Client  # type: ignore  # noqa: PGH003
+from clickhouse_driver import Client
 from dotenv import load_dotenv
 
 load_dotenv()

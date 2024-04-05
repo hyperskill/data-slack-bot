@@ -35,7 +35,7 @@ jobs:
 
       - name: Lint
         run: ruff .
-        working-directory: ./slack_bot
+        working-directory: ./
 
   type_checking:
     name: Static type checking
