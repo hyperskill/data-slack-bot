@@ -15,7 +15,6 @@ from slack_bot.exceptions import TimeIsUpError
 load_dotenv()
 
 
-
 def handler(signum, frame) -> None:  # noqa: ANN001
     raise TimeIsUpError
 
