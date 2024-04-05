@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 
-import pandas as pd
+import pandas as pd  # type: ignore
 from dotenv import load_dotenv
 from generate_plan_from_sql import convert_via_promt
 
@@ -14,9 +14,7 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 PATH_TO_ROOT = Path(__file__).parent.parent.parent
-PATH_TO_DATASET = Path(
-    PATH_TO_ROOT / "data" / "datasets" / "sql_queries.csv"
-)
+PATH_TO_DATASET = Path(PATH_TO_ROOT / "data" / "datasets" / "sql_queries.csv")
 
 functions = DB(PATH_TO_ROOT / "data" / "functions")
 send_user_request = functions["send_user_request.json"] or "{}"
@@ -29,24 +27,15 @@ if send_user_request == "" or system_prompt == "":
 
 def main() -> None:
     """Generate SQL query requests."""
-    tools=[{
-        "type": "function",
-        "function": json.loads(send_user_request, strict=False)
-    }]
-    tool_choice={
-        "type": "function",
-        "function": {
-            "name": "send_user_request"
-        }
-    }
+    tools = [
+        {"type": "function", "function": json.loads(send_user_request, strict=False)}
+    ]
+    tool_choice = {"type": "function", "function": {"name": "send_user_request"}}
     sql_df = pd.read_csv(PATH_TO_DATASET)
     plans = sql_df.plan.to_list()
 
     sql_df["request"] = convert_via_promt(
-        plans,
-        system_prompt,
-        tools=tools,
-        tool_choice=tool_choice
+        plans, system_prompt, tools=tools, tool_choice=tool_choice
     )
     sql_df.to_csv(PATH_TO_DATASET, index=False)
 

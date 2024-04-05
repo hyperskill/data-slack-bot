@@ -266,10 +266,10 @@ def process_conversation(
 
 
 def submit_issue(
-        messages: list[ChatCompletionSystemMessageParam | str | list[dict[str, str]]],
-        project_id: str,
-        model: str
-    ) -> str:
+    messages: list[ChatCompletionSystemMessageParam | str | list[dict[str, str]]],
+    project_id: str,
+    model: str,
+) -> str:
     """Submits a YouTrack issue based on the given messages, project ID, and model.
 
     Args:
@@ -287,12 +287,11 @@ def submit_issue(
         model=model,
         messages=messages,  # type: ignore  # noqa: PGH003
         functions=[func],
-        function_call={"name": "create_issue"}
+        function_call={"name": "create_issue"},
     )
 
     arguments = json.loads(
-        openai_response.choices[0].message.function_call.arguments,
-        strict=False
+        openai_response.choices[0].message.function_call.arguments, strict=False
     )
 
     yt = YouTrack(
@@ -462,7 +461,7 @@ def make_ai_response(
             response_text = submit_issue(
                 messages=messages,  # type: ignore  # noqa: PGH003
                 project_id=project_id,
-                model=model
+                model=model,
             )
         elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
             response_text = generate_sql(

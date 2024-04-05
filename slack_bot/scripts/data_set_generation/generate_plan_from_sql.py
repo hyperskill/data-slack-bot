@@ -18,12 +18,11 @@ load_dotenv()
 def handler(signum, frame) -> None:  # noqa: ANN001
     raise TimeIsUpError
 
+
 logging.basicConfig(level=logging.INFO)
 
 PATH_TO_ROOT = Path(__file__).parent.parent.parent
-PATH_TO_DATASET = Path(
-    PATH_TO_ROOT / "data" / "datasets" / "sql_queries.csv"
-)
+PATH_TO_DATASET = Path(PATH_TO_ROOT / "data" / "datasets" / "sql_queries.csv")
 functions = DB(PATH_TO_ROOT / "data" / "functions")
 send_sql_plan = functions["send_sql_plan.json"] or "{}"
 prompts = DB(PATH_TO_ROOT / "data" / "prompts")
@@ -33,9 +32,7 @@ if send_sql_plan == "" or system_prompt == "":
     raise ValueError("Please, check if you have functions and prompts in data folder.")
 
 
-def convert_via_promt(
-        targets: list[str], prompt: str, **kwargs
-    ) -> list[str | None]:
+def convert_via_promt(targets: list[str], prompt: str, **kwargs) -> list[str | None]:
     """Convert target into completion."""
     assistent = Assistant()
     result = []
@@ -55,10 +52,10 @@ def convert_via_promt(
             response = assistent.get_completion(
                 messages=[
                     {"role": "system", "content": prompt},
-                    {"role": "user", "content": query}
+                    {"role": "user", "content": query},
                 ],
                 tools=kwargs.get("tools", None),
-                tool_choice=kwargs.get("tool_choice", None)
+                tool_choice=kwargs.get("tool_choice", None),
             )
         except Exception:
             logging.exception("Exception occurred")
@@ -88,24 +85,13 @@ def convert_via_promt(
 
 def main() -> None:
     """Generate SQL query plans."""
-    tools=[{
-        "type": "function",
-        "function": json.loads(send_sql_plan, strict=False)
-    }]
-    tool_choice={
-        "type": "function",
-        "function": {
-            "name": "send_sql_plan"
-        }
-    }
+    tools = [{"type": "function", "function": json.loads(send_sql_plan, strict=False)}]
+    tool_choice = {"type": "function", "function": {"name": "send_sql_plan"}}
     sql_df = pd.read_csv(PATH_TO_DATASET)
     queries = sql_df.sql.to_list()
 
     sql_df["plan"] = convert_via_promt(
-        queries,
-        system_prompt,
-        tools=tools,
-        tool_choice=tool_choice
+        queries, system_prompt, tools=tools, tool_choice=tool_choice
     )
     sql_df.to_csv(PATH_TO_DATASET, index=False)
 

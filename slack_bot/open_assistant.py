@@ -23,22 +23,23 @@ ch_client = ClickHouse().client
 SECONDS = 10
 INFO_MESSAGE = f"Run not completed yet. Waiting {SECONDS} seconds..."
 
+
 class OpenAssistant:
     def __init__(
         self,
         assistant: Assistant,
         model: str = "gpt-3.5-turbo",
-        required_actions: list[str] | None=None,
-        tools: list[Tool] | None=None,
+        required_actions: list[str] | None = None,
+        tools: list[Tool] | None = None,
     ) -> None:
         self.model = model
         self.required_actions = required_actions
         self.tools = tools
         self.assistant = assistant
-        self.thread: Thread | None=None
-        self.message: ThreadMessage | None= None
-        self.run: Run | None=None
-        self.result: str | None=None
+        self.thread: Thread | None = None
+        self.message: ThreadMessage | None = None
+        self.run: Run | None = None
+        self.result: str | None = None
 
     def create_thread(self) -> None:
         """Creates a new thread using OpenAI beta threads API.
@@ -48,17 +49,12 @@ class OpenAssistant:
         self.thread = client.beta.threads.create()
 
     def add_message_to_thread(
-            self,
-            content: str,
-            role: Literal["user"],
-            thread_id: str
-        ) -> None:
+        self, content: str, role: Literal["user"], thread_id: str
+    ) -> None:
         """Adds a new message to the thread."""
         try:
             self.message = client.beta.threads.messages.create(
-                thread_id=thread_id,
-                role=role,
-                content=content
+                thread_id=thread_id, role=role, content=content
             )
         except Exception:
             logging.exception("An error occurred while adding a message to the thread.")
@@ -69,9 +65,7 @@ class OpenAssistant:
             raise NoThreadError
 
         self.run = client.beta.threads.runs.create(
-            thread_id=self.thread.id,
-            assistant_id=self.assistant.id,
-            **kwargs
+            thread_id=self.thread.id, assistant_id=self.assistant.id, **kwargs
         )
 
     def retrieve_run(self) -> Run:
@@ -82,8 +76,7 @@ class OpenAssistant:
             raise NoRunError
 
         return client.beta.threads.runs.retrieve(
-            thread_id=self.thread.id,
-            run_id=self.run.id
+            thread_id=self.thread.id, run_id=self.run.id
         )
 
     def get_thread_messages(self) -> list[ThreadMessage]:
@@ -95,34 +88,29 @@ class OpenAssistant:
         return messages.data
 
     def submit_tool_outputs(self, call_id: str, output: str) -> None:
-            """Submits the tool outputs for a specific tool call in the current run.
+        """Submits the tool outputs for a specific tool call in the current run.
 
-            Args:
-                call_id (str): The ID of the tool call.
-                output (str): The output of the tool call.
+        Args:
+            call_id (str): The ID of the tool call.
+            output (str): The output of the tool call.
 
-            Raises:
-                NoThreadError: If there is no active thread.
-                NoRunError: If there is no active run.
+        Raises:
+            NoThreadError: If there is no active thread.
+            NoRunError: If there is no active run.
 
-            Returns:
-                None
-            """
-            if not self.thread:
-                raise NoThreadError
-            if not self.run:
-                raise NoRunError
+        Returns:
+            None
+        """
+        if not self.thread:
+            raise NoThreadError
+        if not self.run:
+            raise NoRunError
 
-            self.run = client.beta.threads.runs.submit_tool_outputs(
-                thread_id=self.thread.id,
-                run_id=self.run.id,
-                tool_outputs=[
-                    {
-                        "tool_call_id": call_id,
-                        "output": output
-                    }
-                ]
-            )
+        self.run = client.beta.threads.runs.submit_tool_outputs(
+            thread_id=self.thread.id,
+            run_id=self.run.id,
+            tool_outputs=[{"tool_call_id": call_id, "output": output}],
+        )
 
     def run_query(self) -> None:
         """Runs a ClickHouse query based on the current run's required action.
@@ -131,9 +119,11 @@ class OpenAssistant:
             str: The result of the query execution.
         """
         logging.info("Trying to run a ClickHouse query...")
-        if self.run and self.run.required_action and (
-            self.run.required_action.submit_tool_outputs
-            ):
+        if (
+            self.run
+            and self.run.required_action
+            and (self.run.required_action.submit_tool_outputs)
+        ):
             tool_call = self.run.required_action.submit_tool_outputs.tool_calls[0]
             tool_call_id = tool_call.id
             arguments = json.loads(tool_call.function.arguments)
@@ -147,14 +137,11 @@ class OpenAssistant:
         except Exception as e:  # noqa: BLE001
             self.submit_tool_outputs(
                 call_id=tool_call_id,
-                output="Stack trace: " + str(e).split("Stack trace:")[0]
+                output="Stack trace: " + str(e).split("Stack trace:")[0],
             )
         else:
             self.result = query
-            self.submit_tool_outputs(
-                call_id=tool_call_id,
-                output="success"
-            )
+            self.submit_tool_outputs(call_id=tool_call_id, output="success")
 
     def perform_required_action(self) -> None:
         """Performs the required action."""
@@ -170,10 +157,8 @@ class OpenAssistant:
             raise ValueError("Invalid run or missing required action")
 
     def interact(
-            self,
-            messages: list[str] | None=None,
-            **kwargs
-        ) -> list[ThreadMessage] | None:
+        self, messages: list[str] | None = None, **kwargs
+    ) -> list[ThreadMessage] | None:
         """Interacts with the assistant."""
         if not self.thread:
             self.create_thread()
@@ -183,9 +168,7 @@ class OpenAssistant:
         if messages:
             for message in messages:
                 self.add_message_to_thread(
-                    content=message,
-                    role="user",
-                    thread_id=self.thread.id
+                    content=message, role="user", thread_id=self.thread.id
                 )
 
         self.create_run(**kwargs)

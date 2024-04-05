@@ -28,16 +28,16 @@ def print_messages(response: list[ThreadMessage]) -> None:
     """
     for message in response[::-1]:
         print(f"============{message.role}===========")  # noqa: T201
-        print(message.content[0].text.value) # type: ignore[union-attr] # noqa: T201
+        print(message.content[0].text.value)  # type: ignore[union-attr] # noqa: T201
         print()  # noqa: T201
 
 
 shots = DB(Path(__file__).parent.parent / "data" / "shots")
 
 dev_shots: list[str] = [
-        f"EXAMPLE 1:\n{shots['dump_users.sql']}",
-        f"EXAMPLE 2:\n{shots['users_part.sql']}",
-    ]
+    f"EXAMPLE 1:\n{shots['dump_users.sql']}",
+    f"EXAMPLE 2:\n{shots['users_part.sql']}",
+]
 
 # constants
 EXAMPLE = """Hello! Could you, please, help me?\n
@@ -66,9 +66,7 @@ if response:
 
     messages = [*dev_shots, result]
 
-    response = dev.interact(
-        messages=messages
-    )
+    response = dev.interact(messages=messages)
 
     if response:
         print_messages(response)

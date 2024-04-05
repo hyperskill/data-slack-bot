@@ -60,7 +60,7 @@ jobs:
 
       - name: Lint
         run: mypy .
-        working-directory: ./slack_bot
+        working-directory: ./
 
   deploy:
     name: Deploy
