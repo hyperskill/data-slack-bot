@@ -56,17 +56,20 @@ if user_input == "":
     user_input = EXAMPLE
 
 response = plan.interact(
-    messages=[user_input],
-    model="gpt-3.5-turbo-1106",
+    messages= [*dev_shots, user_input],
+    model="gpt-4-turbo-2024-04-09",
 )
 
 if response:
     print_messages(response)
     result = response[0].content[0].text.value  # type: ignore[union-attr]
 
-    messages = [*dev_shots, result]
+    messages = [user_input, result]
 
-    response = dev.interact(messages=messages)
+    response = dev.interact(
+        messages=messages,
+        model="gpt-4-turbo-2024-04-09"
+    )
 
     if response:
         print_messages(response)
