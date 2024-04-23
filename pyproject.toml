@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 slack-bolt = "1.18.0"
-python-dotenv = "1.0.0"
+python-dotenv = "1.0.1"
 pygithub = "1.59.1"
 structlog = "23.1.0"
 structlog-sentry = "2.0.3"
