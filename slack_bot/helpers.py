@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import traceback
@@ -21,6 +22,8 @@ from slack_bot.youtrack import YouTrack
 load_dotenv()
 client = OpenAI()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionSystemMessageParam
@@ -42,7 +45,7 @@ shots = DB(Path(__file__).parent / "data" / "shots")
 
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
-BEST_MODEL = "gpt-4-1106-preview"
+BEST_MODEL = "gpt-4o"
 MODEL = "gpt-4"
 projects = json.loads(data["yt_projects.json"] or "{}")
 projects_shortnames = [project["shortName"].lower() for project in projects]
@@ -474,6 +477,7 @@ def make_ai_response(
             )
             response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003, E501
 
+        logger.info("Dassy response: %s", response_text)
         app.client.chat_update(
             channel=channel_id, ts=reply_message_ts, text=response_text
         )
