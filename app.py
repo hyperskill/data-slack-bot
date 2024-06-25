@@ -26,8 +26,8 @@ def command_handler(body: dict[str, dict[str, str]], context: dict[str, str]) ->
         run_with_the_best_model(app=app, body=body, context=context)
     except SlackApiError as e:
         logger.exception("Slack API error: %s", e.response["error"])
-    except Exception:
-        logger.exception("Found an error")
+    except Exception as e:
+        logger.exception("Found an error: %s", e)  # noqa: TRY401
 
 
 if __name__ == "__main__":
