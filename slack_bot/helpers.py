@@ -17,6 +17,8 @@ from trafilatura.settings import use_config
 from slack_bot.assistant import Assistant, Phase
 from slack_bot.clickhouse import ClickHouse
 from slack_bot.db import DB
+from slack_bot.metric_watch_interface.constants import MENU
+from slack_bot.metric_watch_interface.subscription_manager import SubscriptionManager
 from slack_bot.youtrack import YouTrack
 
 load_dotenv()
@@ -52,6 +54,7 @@ projects_shortnames = [project["shortName"].lower() for project in projects]
 AN_COMMAND = "an"
 YT_COMMAND = "yt"
 SQL_COMMAND = "sql"
+METRIC_WATCH_COMMAND = "mw"
 YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
 
 
@@ -383,6 +386,22 @@ def generate_sql(problem: str, model: str) -> str:
         )
 
 
+def metric_watch_scenario(user: str, last_msg: str) -> str:
+    if last_msg == METRIC_WATCH_COMMAND:
+        return MENU
+    if last_msg == "2":
+        return "Enter metric name:"
+
+    manager = SubscriptionManager()
+
+    if last_msg == "1":
+        return f"Metrics:\n{', '.join(manager.list_metrics())}\n" + MENU
+    if last_msg in manager.list_metrics():
+        return manager.sub_or_unsub(user, last_msg) + "\n" + MENU
+
+    return "Invalid choice. Please try again.\n" + MENU
+
+
 def make_ai_response(
     app: App,
     body: dict[str, dict[str, str]],
@@ -438,6 +457,9 @@ def make_ai_response(
         while num_tokens_from_messages(messages) > MAX_TOKENS * 0.95:
             messages.pop(0)
 
+        first_msg = messages[0]
+        first_msg_content = first_msg["content"]
+
         last_msg = messages[-1]
         last_msg_content = last_msg["content"]
         maybe_command = last_msg_content.split(" ")[0]
@@ -470,6 +492,11 @@ def make_ai_response(
             response_text = generate_sql(
                 problem=last_msg_content[len(SQL_COMMAND) + 1 :],
                 model=model,
+            )
+        elif (last_msg["role"] == "user") & (first_msg_content == METRIC_WATCH_COMMAND):
+            response_text = metric_watch_scenario(
+                user=body["event"]["user"],
+                last_msg=last_msg_content,
             )
         else:
             completion = client.chat.completions.create(
