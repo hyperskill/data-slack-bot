@@ -1,0 +1,12 @@
+Based on the user’s answer:
+"""{user_answer}""",
+
+please, select the correct pay template according to the templates:
+"""
+{templates}
+"""
+
+Notes:
+- Pay attention, is this reimbursement (compensation) or financial team need to make a payment? (If payment, then in what way: Bank transfer, PayPal, SolarStaff, Upwork) or financial team need to create a budget for payment by card.
+
+- If you cannot unambiguously choose a template, you can ask only 1 clarifying question; if after that you cannot choose a template, use the template Other task.

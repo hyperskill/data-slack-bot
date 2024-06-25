@@ -30,7 +30,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from openai.types.chat import ChatCompletionSystemMessageParam
+    from openai.types.chat import (
+        ChatCompletionMessageParam,
+        ChatCompletionSystemMessageParam,
+    )
     from slack_bolt import App
 
 newconfig = use_config()
@@ -57,7 +60,20 @@ AN_COMMAND = "an"
 YT_COMMAND = "yt"
 SQL_COMMAND = "sql"
 METRIC_WATCH_COMMAND = "mw"
+PAY_COMMAND = "pay"
+PAY_GREETING = "Please, describe what task you would like to set for the finance team in a free form."
 YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
+PAY_URL = "https://docs.google.com/document/d/11c5frOCNIJxTJ4zlJMNUeN3_xRbWEERNR1N9QPaRitk/edit#heading=h.kgvgpms6byh7"
+
+
+def get_completion(prompt: str, model: str=BEST_MODEL) -> str:
+    messages: list[ChatCompletionMessageParam] = [{"role": "user", "content": prompt}]
+    completion = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=0,
+    )
+    return completion.choices[0].message.content or "Sorry, no response."
 
 
 def extract_url_list(text: str) -> list[str] | None:
@@ -255,7 +271,9 @@ def process_conversation(
     for message in conversation_messages:
         cleaned_message = message["text"].replace(f"<@{bot_user_id}>", "").strip()
 
-        if cleaned_message in projects_shortnames:
+        if cleaned_message == PAY_COMMAND:
+            pass
+        elif cleaned_message in projects_shortnames:
             template = templates[cleaned_message] or templates[YT_COMMAND]
             system = prompts["clarification"]
 
@@ -416,6 +434,21 @@ def metric_watch_scenario(user: str, last_msg: str) -> str:
     return "Invalid choice. Please try again.\n" + MENU
 
 
+def pay_scenario(last_msg: str) -> str:
+    if last_msg == PAY_COMMAND:
+        return PAY_GREETING
+
+    raw_prompt = prompts["pay"]
+
+    if raw_prompt:
+        return get_completion(raw_prompt.format(
+            user_answer=last_msg,
+            templates=augment_user_message(user_message="", url_list=[PAY_URL])
+        ))
+
+    raise ValueError("Prompt for pay scenario is missing.")
+
+
 def make_ai_response(
     app: App,
     body: dict[str, dict[str, str]],
@@ -473,55 +506,59 @@ def make_ai_response(
 
         first_msg = messages[0]
         first_msg_content = first_msg["content"]
+        print(f"First message: {first_msg_content}")  # noqa: T201
 
         last_msg = messages[-1]
         last_msg_content = last_msg["content"]
         maybe_command = last_msg_content.split(" ")[0]
 
-        if (last_msg["role"] == "user") & (maybe_command == YT_COMMAND):
-            maybe_short_name = last_msg_content.split(" ")[-1]
+        if last_msg["role"] == "user":
+            if first_msg_content == PAY_COMMAND:
+                response_text = pay_scenario(last_msg=maybe_command)
+            elif maybe_command == YT_COMMAND:
+                maybe_short_name = last_msg_content.split(" ")[-1]
 
-            if maybe_short_name in projects_shortnames:
-                project_id = next(
-                    project
-                    for project in projects
-                    if project["shortName"].lower() == maybe_short_name
-                )["id"]
+                if maybe_short_name in projects_shortnames:
+                    project_id = next(
+                        project
+                        for project in projects
+                        if project["shortName"].lower() == maybe_short_name
+                    )["id"]
+                else:
+                    project_id = "43-46"
+
+                template = templates[maybe_short_name] or templates[YT_COMMAND]
+                messages.pop()  # remove YT_COMMAND
+                system = prompts["clarification"]
+
+                messages.append(
+                    {"role": "system", "content": coock_prompt(system, template)}
+                )
+                response_text = submit_issue(
+                    messages=messages,  # type: ignore  # noqa: PGH003
+                    project_id=project_id,
+                    model=model,
+                )
+            elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
+                response_text = generate_sql(
+                    problem=last_msg_content[len(SQL_COMMAND) + 1 :],
+                    model=model,
+                )
+            elif (last_msg["role"] == "user") & (first_msg_content == METRIC_WATCH_COMMAND):
+                response_text = metric_watch_scenario(
+                    user=body["event"]["user"],
+                    last_msg=last_msg_content,
+                )
             else:
-                project_id = "43-46"
+                completion = client.chat.completions.create(
+                    model=model, messages=messages  # type: ignore  # noqa: PGH003
+                )
+                response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003, E501
 
-            template = templates[maybe_short_name] or templates[YT_COMMAND]
-            messages.pop()  # remove YT_COMMAND
-            system = prompts["clarification"]
-
-            messages.append(
-                {"role": "system", "content": coock_prompt(system, template)}
+            logger.info("Dassy response: %s", response_text)
+            app.client.chat_update(
+                channel=channel_id, ts=reply_message_ts, text=response_text
             )
-            response_text = submit_issue(
-                messages=messages,  # type: ignore  # noqa: PGH003
-                project_id=project_id,
-                model=model,
-            )
-        elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
-            response_text = generate_sql(
-                problem=last_msg_content[len(SQL_COMMAND) + 1 :],
-                model=model,
-            )
-        elif (last_msg["role"] == "user") & (first_msg_content == METRIC_WATCH_COMMAND):
-            response_text = metric_watch_scenario(
-                user=body["event"]["user"],
-                last_msg=last_msg_content,
-            )
-        else:
-            completion = client.chat.completions.create(
-                model=model, messages=messages  # type: ignore  # noqa: PGH003
-            )
-            response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003, E501
-
-        logger.info("Dassy response: %s", response_text)
-        app.client.chat_update(
-            channel=channel_id, ts=reply_message_ts, text=response_text
-        )
     except Exception as e:  # noqa: BLE001
         print(f"Error: {e}")  # noqa: T201
         app.client.chat_postMessage(
