@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 class SubscriptionManager:
     def __init__(self, db: Database) -> None:
         self.db = db
+
     def list_metrics(self) -> list[str]:
         """List all metrics."""
         return [metric.name for metric in Metrics.objects_in(self.db)]
@@ -28,7 +29,9 @@ class SubscriptionManager:
     def subscribe(self, user: str, metric: str) -> str:
         """Subscribe a user to a metric."""
         subscription = Subscriptions(
-            user=user, metric=metric, subscribed_at=datetime.now(tz=self.db.server_timezone)
+            user=user,
+            metric=metric,
+            subscribed_at=datetime.now(tz=self.db.server_timezone),
         )
         self.db.insert([subscription])
 
