@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import traceback
 
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
@@ -26,8 +27,8 @@ def command_handler(body: dict[str, dict[str, str]], context: dict[str, str]) ->
         run_with_the_best_model(app=app, body=body, context=context)
     except SlackApiError as e:
         logger.exception("Slack API error: %s", e.response["error"])
-    except Exception as e:
-        logger.exception("Found an error: %s", e)  # noqa: TRY401
+    except Exception:
+        logger.exception("Found an error: %s", traceback.extract_stack)
 
 
 if __name__ == "__main__":

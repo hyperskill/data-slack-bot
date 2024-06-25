@@ -389,6 +389,12 @@ def generate_sql(problem: str, model: str) -> str:
 
 
 def metric_watch_scenario(user: str, last_msg: str) -> str:
+    """Handles the metric watch scenario based on the last message."""
+    if last_msg == METRIC_WATCH_COMMAND:
+        return MENU
+    if last_msg == "2":
+        return "Enter metric name:"
+
     db = Database(
         db_name=METRIC_WATCH_DB,
         db_url=str(os.environ.get("CLICKHOUSE_HOST_URL")),
@@ -398,11 +404,6 @@ def metric_watch_scenario(user: str, last_msg: str) -> str:
     # Create tables if not exist
     db.create_table(Metrics)
     db.create_table(Subscriptions)
-
-    if last_msg == METRIC_WATCH_COMMAND:
-        return MENU
-    if last_msg == "2":
-        return "Enter metric name:"
 
     manager = SubscriptionManager(db=db)
 
