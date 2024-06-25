@@ -115,6 +115,6 @@ jobs:
           --set openai.oaiToken=${{ secrets.OPENAI_API_KEY }} \
           --set youtrack.apiToken=${{ secrets.YT_API_TOKEN }} \
           --set clickhouse.host=${{ secrets.CLICKHOUSE_HOST }} \
-          --set clickhouse.port=${{ secrets.CLICKHOUSE_HOST_URL }} \
+          --set clickhouse.host_url=${{ secrets.CLICKHOUSE_HOST_URL }} \
           --set clickhouse.user=${{ secrets.CLICKHOUSE_USER }} \
           --set clickhouse.pass=${{ secrets.CLICKHOUSE_PASSWORD }}
