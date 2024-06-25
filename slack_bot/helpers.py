@@ -10,6 +10,7 @@ from typing import Any, TYPE_CHECKING
 
 import tiktoken
 from dotenv import load_dotenv
+from infi.clickhouse_orm import Database
 from openai import OpenAI
 from trafilatura import extract, fetch_url
 from trafilatura.settings import use_config
@@ -17,7 +18,8 @@ from trafilatura.settings import use_config
 from slack_bot.assistant import Assistant, Phase
 from slack_bot.clickhouse import ClickHouse
 from slack_bot.db import DB
-from slack_bot.metric_watch_interface.constants import MENU
+from slack_bot.metric_watch_interface.constants import MENU, METRIC_WATCH_DB
+from slack_bot.metric_watch_interface.database import Metrics, Subscriptions
 from slack_bot.metric_watch_interface.subscription_manager import SubscriptionManager
 from slack_bot.youtrack import YouTrack
 
@@ -387,15 +389,26 @@ def generate_sql(problem: str, model: str) -> str:
 
 
 def metric_watch_scenario(user: str, last_msg: str) -> str:
+    db = Database(
+        db_name=METRIC_WATCH_DB,
+        db_url=str(os.environ.get("CLICKHOUSE_HOST_URL")),
+        username=os.environ.get("CLICKHOUSE_USER"),
+        password=os.environ.get("CLICKHOUSE_PASSWORD"),
+    )
+    # Create tables if not exist
+    db.create_table(Metrics)
+    db.create_table(Subscriptions)
+
     if last_msg == METRIC_WATCH_COMMAND:
         return MENU
     if last_msg == "2":
         return "Enter metric name:"
 
-    manager = SubscriptionManager()
+    manager = SubscriptionManager(db=db)
 
     if last_msg == "1":
-        return f"Metrics:\n{', '.join(manager.list_metrics())}\n" + MENU
+        metrics = [f"`{metric}`" for metric in manager.list_metrics()]
+        return f"Metrics:\n{', '.join(metrics)}\n" + MENU
     if last_msg in manager.list_metrics():
         return manager.sub_or_unsub(user, last_msg) + "\n" + MENU
 
