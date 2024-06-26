@@ -61,12 +61,18 @@ YT_COMMAND = "yt"
 SQL_COMMAND = "sql"
 METRIC_WATCH_COMMAND = "mw"
 PAY_COMMAND = "pay"
-PAY_GREETING = "Please, describe what task you would like to set for the finance team in a free form."
+PAY_GREETING = (
+    "Please, describe what task you would like to set for the finance team "
+    "in a free form."
+)
 YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
-PAY_URL = "https://docs.google.com/document/d/11c5frOCNIJxTJ4zlJMNUeN3_xRbWEERNR1N9QPaRitk/edit#heading=h.kgvgpms6byh7"
+PAY_URL = (
+    "https://docs.google.com/document/d/11c5frOCNIJxTJ4zlJMNUeN3_xRbWEERNR1N9QPaRitk/"
+    "edit#heading=h.kgvgpms6byh7"
+)
 
 
-def get_completion(prompt: str, model: str=BEST_MODEL) -> str:
+def get_completion(prompt: str, model: str = BEST_MODEL) -> str:
     messages: list[ChatCompletionMessageParam] = [{"role": "user", "content": prompt}]
     completion = client.chat.completions.create(
         model=model,
@@ -516,11 +522,11 @@ def make_ai_response(
             if first_msg_content == PAY_COMMAND:
                 user_info = app.client.users_info(user=body["event"]["user"])
                 user_name = user_info["user"]["real_name"]
-                response_text = pay_scenario(last_msg=last_msg_content, user_name=user_name)
+                response_text = pay_scenario(
+                    last_msg=last_msg_content, user_name=user_name
+                )
                 if last_msg_content != PAY_COMMAND:
-                    messages.append(
-                    {"role": "system", "content": response_text}
-                    )
+                    messages.append({"role": "system", "content": response_text})
                     project_id = next(
                         project
                         for project in projects
@@ -537,7 +543,6 @@ def make_ai_response(
                 return
 
             if maybe_command == YT_COMMAND:
-                print("DEBUG: INSIDE YT_COMMAND")
                 maybe_short_name = last_msg_content.split(" ")[-1]
 
                 if maybe_short_name in projects_shortnames:
