@@ -1,9 +1,144 @@
 Based on the user’s answer:
+
+User name: {user_name},
+
 """{user_answer}""",
 
 please, select the correct pay template according to the templates:
 """
-{templates}
+# Request type: Bank transfer payment request (wire, SEPA):
+For pay benefits please use task's name: Pay, Health benefits/ Vacation/ Education/Workspace/Equipment expenses, Name, Surname of employee, month year.
+For other payments, please use task name: Pay for Expense type, month year
+Amount and currency:
+Beneficiary:
+Beneficiary's address: (in international format: street, house number, apt., zip code, city, country)
+Beneficiary's phone (for payment from Stepic Inc):
+Beneficiary's email:
+Beneficiary's IBAN or Beneficiary's account:
+Bank:
+Bank address (bank country is necessary):
+SWIFT/BIC code or Beneficiary Bank Routing Code:
+Remittance Information: invoice number and invoice date
+The invoice (payment request, pro-forma invoice, order) must be attached to the task.
+If a payment request, pro-forma invoice, order was attached for payment, then after payment it is necessary to attach an invoice.
+In the right menu:
+The finance department checks and fills in all fields.
+
+# Request type: PayPal payment
+Beneficiary:
+Beneficiary's email in PayPal:
+Amount in USD gross:
+# Request type: SolarStaff payment
+Beneficiary:
+Beneficiary's email in SolarStaff:
+Amount in USD NET:
+Amount in USD Gross (+2.5% commissions of SolarStaff from our company):
+# Request type: Upwork payment
+Beneficiary:
+Beneficiary's Name and Surname in Upwork + link on their page in Upwork:
+Amount in USD gross:
+# Request type: Create Budget for payment by card
+Task's name: Create Budget for payment by card for [add service or expense] for Name, Surname of an employee, month, year
+Amount of necessary budget in USD:
+Amount of necessary budget in payment currency [fill only if different than USD]:
+Payment regularity: once / monthly / yearly
+Brief description: what we pay for [with link], and why will this increase your productivity at work?
+At the moment, we can only pay with a card from Stepic Inc.
+The invoice / receipt must be attached before or after payment by Requester.
+The Assignee changes the payment status in right menu to Fixed (other) after the payment.
+In the right menu:
+The finance department checks and fills in all fields.
+Available balance after this reimbursement (for benefits only).
+# Request type: Health benefits reimbursement
+Task's name [please fill and add in Summary]: Reimbursement of Health benefits for Name, Surname of employee, month, year
+In the task from the employee:
+I confirm that my reimbursement request complies with the Employee benefits / Hyperskill policy:
+For compensation I requested only my expenses (expenses of 1 person)
+Amount in payment currency [please write]:
+Add in this task an invoice, a receipt or a confirmation of debiting payment from the card.
+In the task: from the financial department.
+Amount of reimbursement in USD [fill only if different than amount in payment currency]:
+Available balance after this reimbursement:
+In the right menu:
+The finance department checks and fills in all fields.
+# Request type: Educational benefits reimbursement
+Task's name [please fill and add in Summary]: Reimbursement of Educational benefits for Name, Surname of employee, month, year
+In the task from the employee:
+I would like to receive Educational benefits reimbursement, if my Personal manager will authorize it according to Employee benefits / Hyperskill policy
+Brief description: what we pay for [with link], and why will this increase your productivity at work?
+Amount in payment currency [please write]:
+Add in this task an invoice, a receipt or a confirmation of debiting payment from the card.
+In the task: from the financial department.
+Amount of reimbursement in USD [fill only if different than amount in payment currency]:
+Available balance after this reimbursement:
+In the right menu:
+The finance department checks and fills in all fields.
+# Request type: Vacation bonus
+Task's name [please fill and add in Summary]: Vacation bonus, year, for Name, Surname of employee
+In the task from the employee:
+I confirm that my reimbursement request complies with the Employee benefits / Hyperskill policy:
+The main purpose of expenditure is rest and recuperation
+I took an agreed leave of 7 of more calendar days
+The place of these expenses was not Russia or other US sanctioned territories
+For compensation I requested only my expenses (expenses of 1 person)
+Amount in payment currency [please write]:
+Add in this task an invoice, a receipt or a confirmation of debiting payment from the card.
+In the task: from the financial department.
+Amount of reimbursement in USD [fill only if different than amount in payment currency]:
+Available balance after this reimbursement:
+In the right menu:
+The finance department checks and fills in all fields.'
+# Request type: Business expenses reimbursement
+Task's name [please fill and add in Summary]: Reimbursement of Business expenses for Name, Surname of employee, month, year
+In the task from the employee:
+I confirm that my reimbursement request complies with the Business expenses / Hyperskill policy
+Brief description of business reason of this expense [please write, examples, coworking, Internet, subscription for etc]:
+Amount in payment currency [please write]:
+Add in this task an invoice, a receipt or a confirmation of debiting payment from the card.
+In the task: from the financial department.
+Amount of reimbursement in USD [fill only if different than amount in payment currency]:
+In the right menu:
+The finance department checks and fills in all fields.
+# Request type: Equipment expenses reimbursement
+Task's name [please fill and add in Summary]: Reimbursement of Equipment expenses for Name, Surname of employee, month, year
+In the task from the employee:
+I confirm that my reimbursement request complies with the Hyperskill Equipment and Workplace Policy :
+Amount in payment currency [please write]:
+Add in this task an invoice, a receipt or a confirmation of debiting payment from the card.
+In the task: from the financial department.
+Amount of reimbursement in USD [fill only if different than amount in payment currency]:
+In the right menu:
+The finance department checks and fills in all fields.
+# Request type: Workspace expenses reimbursement
+Task's name [please fill and add in Summary]: Reimbursement of Workspace expenses for Name, Surname of employee, month, year
+In the task from the employee:
+I confirm that my reimbursement request complies with the Hyperskill Equipment and Workplace Policy :
+Amount in payment currency [please write]:
+Add in this task an invoice, a receipt or a confirmation of debiting payment from the card.
+In the task: from the financial department.
+Amount of reimbursement in USD [fill only if different than amount in payment currency]:
+Available balance after this reimbursement:
+In the right menu:
+The finance department checks and fills in all fields.
+# Request type: New bank details
+Task's name: New bank details of Name Surname from Date Month Year
+In the task from the employee:
+Account currency should be USD
+Beneficiary (like in bank details):
+Beneficiary's address: (in international format: street, house number, apt., zip code, city, country)
+Beneficiary's phone:
+Beneficiary's email:
+Beneficiary's IBAN or Beneficiary's account:
+Bank:
+Bank address (bank country is necessary):
+SWIFT/BIC code or Beneficiary Bank Routing Code:
+Additional Information:
+Fill a new W-8BEN, if you receive payments from Stepic Inc and change Beneficiary's country.
+If you have not specified anything in the additional information, by default your details will be updated in the current month's payroll if you provided information before the 25th and in the next month's payroll if you provided information after the 25th.
+In the right menu:
+The finance department checks and fills in all fields and changes the status to fixed after changing the details in the payroll.
+# Request type: Other task
+[describe the task for the finance team]
 """
 
 Notes:

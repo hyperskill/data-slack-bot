@@ -434,17 +434,18 @@ def metric_watch_scenario(user: str, last_msg: str) -> str:
     return "Invalid choice. Please try again.\n" + MENU
 
 
-def pay_scenario(last_msg: str) -> str:
+def pay_scenario(last_msg: str, user_name: str) -> str:
     if last_msg == PAY_COMMAND:
         return PAY_GREETING
 
     raw_prompt = prompts["pay"]
 
     if raw_prompt:
-        return get_completion(raw_prompt.format(
+        prompt = raw_prompt.format(
+            user_name=user_name,
             user_answer=last_msg,
-            templates=augment_user_message(user_message="", url_list=[PAY_URL])
-        ))
+        )
+        return get_completion(prompt)
 
     raise ValueError("Prompt for pay scenario is missing.")
 
@@ -506,16 +507,37 @@ def make_ai_response(
 
         first_msg = messages[0]
         first_msg_content = first_msg["content"]
-        print(f"First message: {first_msg_content}")  # noqa: T201
 
         last_msg = messages[-1]
         last_msg_content = last_msg["content"]
         maybe_command = last_msg_content.split(" ")[0]
 
-        if last_msg["role"] == "user":
+        if last_msg["role"] in ("user", "system"):
             if first_msg_content == PAY_COMMAND:
-                response_text = pay_scenario(last_msg=maybe_command)
-            elif maybe_command == YT_COMMAND:
+                user_info = app.client.users_info(user=body["event"]["user"])
+                user_name = user_info["user"]["real_name"]
+                response_text = pay_scenario(last_msg=last_msg_content, user_name=user_name)
+                if last_msg_content != PAY_COMMAND:
+                    messages.append(
+                    {"role": "system", "content": response_text}
+                    )
+                    project_id = next(
+                        project
+                        for project in projects
+                        if project["shortName"].lower() == PAY_COMMAND.lower()
+                    )["id"]
+                    response_text = submit_issue(
+                        messages=messages,  # type: ignore  # noqa: PGH003
+                        project_id=project_id,
+                        model=model,
+                    )
+                app.client.chat_update(
+                    channel=channel_id, ts=reply_message_ts, text=response_text
+                )
+                return
+
+            if maybe_command == YT_COMMAND:
+                print("DEBUG: INSIDE YT_COMMAND")
                 maybe_short_name = last_msg_content.split(" ")[-1]
 
                 if maybe_short_name in projects_shortnames:
@@ -539,12 +561,12 @@ def make_ai_response(
                     project_id=project_id,
                     model=model,
                 )
-            elif (last_msg["role"] == "user") & (maybe_command == SQL_COMMAND):
+            elif maybe_command == SQL_COMMAND:
                 response_text = generate_sql(
                     problem=last_msg_content[len(SQL_COMMAND) + 1 :],
                     model=model,
                 )
-            elif (last_msg["role"] == "user") & (first_msg_content == METRIC_WATCH_COMMAND):
+            elif first_msg_content == METRIC_WATCH_COMMAND:
                 response_text = metric_watch_scenario(
                     user=body["event"]["user"],
                     last_msg=last_msg_content,
