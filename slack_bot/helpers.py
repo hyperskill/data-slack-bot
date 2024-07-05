@@ -42,6 +42,7 @@ newconfig.set("DEFAULT", "EXTRACTION_TIMEOUT", "0")
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+HYPERSKILLAI_API_KEY = os.environ.get("HYPERSKILLAI_API_KEY")
 YT_API_TOKEN = os.environ.get("YT_API_TOKEN")
 
 data = DB(Path(__file__).parent / "data")
@@ -52,6 +53,7 @@ shots = DB(Path(__file__).parent / "data" / "shots")
 
 WAIT_MESSAGE = "Got your request. Please wait."
 MAX_TOKENS = 8192
+HYPERSKILLAI_MODEL = "claude-3-5-sonnet-20240620"
 BEST_MODEL = "gpt-4o"
 MODEL = "gpt-4"
 projects = json.loads(data["yt_projects.json"] or "{}")
@@ -60,6 +62,7 @@ AN_COMMAND = "an"
 YT_COMMAND = "yt"
 SQL_COMMAND = "sql"
 METRIC_WATCH_COMMAND = "mw"
+GENERATE_PROMPT_COMMAND = "gp"
 PAY_COMMAND = "pay"
 PAY_GREETING = (
     "Please, describe what task you would like to set for the finance team "
