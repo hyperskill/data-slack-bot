@@ -19,7 +19,7 @@ class PromptsGenerator:
 
     # This determines how many candidate prompts to generate.
     # The higher, the more expensive and long, but the better the results will be
-    __NUMBER_OF_PROMPTS = 3
+    __NUMBER_OF_PROMPTS = 5
 
     __CANDIDATE_MODEL_TEMPERATURE = 0.9
     __GENERATION_MODEL_TEMPERATURE = 0.8
