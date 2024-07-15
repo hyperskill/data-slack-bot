@@ -12,7 +12,7 @@ jobs:
     runs-on: [ self-hosted, small ]
     timeout-minutes: 120
     steps:
-      - uses: hyperskill/azure-login@v2.0.0
+      - uses: hyperskill/azure-login@v3.0.0
         with:
           client_id: ${{ secrets.CLIENT_ID }}
           client_secret: ${{ secrets.CLIENT_SECRET }}
