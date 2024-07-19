@@ -18,13 +18,12 @@ from trafilatura.settings import use_config
 from slack_bot.assistant import Assistant, Phase
 from slack_bot.clickhouse import ClickHouse
 from slack_bot.db import DB
+from slack_bot.prompt_generation_interface.hyperskillai_api import HyperskillAIAPI
+from slack_bot.prompt_generation_interface.prompts_generator import PromptsGenerator
 from slack_bot.metric_watch_interface.constants import MENU, METRIC_WATCH_DB
 from slack_bot.metric_watch_interface.database import Metrics, Subscriptions
 from slack_bot.metric_watch_interface.subscription_manager import SubscriptionManager
 from slack_bot.youtrack import YouTrack
-
-from prompt_generation_interface.hyperskillai_api import HyperskillAIAPI
-from prompt_generation_interface.prompts_generator import PromptsGenerator
 
 load_dotenv()
 client = OpenAI()
@@ -458,8 +457,8 @@ def generate_prompt(raw_request: str, model: str = "claude-3-5-sonnet-20240620")
         )
 
     return (
-        f"Here's your freshly-forged prompt. I hope you'll like it!"
-        f"But please be careful and check it manually before using 🤫"
+        f"Here's your freshly-forged prompt. I hope you'll like it!\n"
+        f"But please be careful and check it manually before using 🤫\n"
         f"```{optimal_prompt_for_request}```"
     )
 
