@@ -3,8 +3,8 @@ import json
 import itertools
 
 from tenacity import retry, stop_after_attempt, wait_exponential
+from slack_bot.prompt_generation_interface.hyperskillai_api import HyperskillAIAPI
 
-from hyperskillai_api import HyperskillAIAPI
 
 class PromptsGenerator:
     # K is a constant factor that determines how much rating change
@@ -19,7 +19,7 @@ class PromptsGenerator:
 
     # This determines how many candidate prompts to generate.
     # The higher, the more expensive and long, but the better the results will be
-    __NUMBER_OF_PROMPTS = 5
+    __NUMBER_OF_PROMPTS = 3
 
     __CANDIDATE_MODEL_TEMPERATURE = 0.9
     __GENERATION_MODEL_TEMPERATURE = 0.8
@@ -28,10 +28,8 @@ class PromptsGenerator:
 
     __GENERATION_MODEL_MAX_TOKENS = 800
 
-
     def __init__(self, ai_api: HyperskillAIAPI):
         self.__ai_api = ai_api
-
 
     def generate_optimal_prompt(self, description: str, input_variables: list[dict[str, str]]) -> str:
         test_cases = self.__generate_test_cases(description, input_variables, self.__NUMBER_OF_TEST_CASES)
@@ -41,14 +39,13 @@ class PromptsGenerator:
         # Returning the prompt with the best ELO rating
         return sorted(prompt_ratings.items(), key=lambda item: item[1], reverse=True)[0][0]
 
-
     def __generate_test_cases(
         self,
         description: str,
         input_variables: list[dict[str, str]],
         num_test_cases: int = 5
     ) -> list[dict]:
-        variable_descriptions = "\n".join(f"{var['variable']}: {var['description']}" for var in input_variables)
+        variable_descriptions = "\n".join(f"{var}" for var in input_variables)
 
         messages = [
             {
@@ -76,7 +73,6 @@ class PromptsGenerator:
         test_cases = json.loads(response_text)
         return test_cases
 
-
     def __generate_candidate_prompts(
         self,
         description: str,
@@ -84,7 +80,7 @@ class PromptsGenerator:
         test_cases: list[dict],
         number_of_prompts: int
     ) -> list[str]:
-        variable_descriptions = "\n".join(f"{var['variable']}: {var['description']}" for var in input_variables)
+        variable_descriptions = "\n".join(f"{var}" for var in input_variables)
 
         messages = [
             {
@@ -152,7 +148,7 @@ class PromptsGenerator:
         return prompt_ratings
 
 
-    @retry(stop=stop_after_attempt(N_RETRIES), wait=wait_exponential(multiplier=1, min=4, max=70))
+    @retry(stop=stop_after_attempt(N_RETRIES), wait=wait_exponential(multiplier=1, min=2, max=70))
     def __get_generation(self, prompt: str, test_case: dict) -> str:
         # Replace variable placeholders in the prompt with their actual values from the test case
         for var_dict in test_case['variables']:
@@ -180,7 +176,7 @@ class PromptsGenerator:
 
 
     # Get Score - retry up to N_RETRIES times, waiting exponentially between retries.
-    @retry(stop=stop_after_attempt(N_RETRIES), wait=wait_exponential(multiplier=1, min=4, max=70))
+    @retry(stop=stop_after_attempt(N_RETRIES), wait=wait_exponential(multiplier=1, min=2, max=70))
     def __get_score(self, description: str, test_case: dict, pos_1: str, pos_2: str) -> float:
         messages = [
             {
@@ -197,8 +193,8 @@ class PromptsGenerator:
                 "content":  f"""
                     Task: {description.strip()}
                     Variables: {test_case['variables']}
-                    Generation A: {self.remove_first_line(pos_1)}
-                    Generation B: {self.remove_first_line(pos_2)}""",
+                    Generation A: {self.__remove_first_line(pos_1)}
+                    Generation B: {self.__remove_first_line(pos_2)}""",
             }
         ]
 
@@ -208,21 +204,18 @@ class PromptsGenerator:
             temperature=self.__RANKING_MODEL_TEMPERATURE
         )
 
-        return score
+        return float(score)
 
-
-    def __update_elo(self, rating_1: float, rating_2: float, score: float) -> float:
+    def __update_elo(self, rating_1: float, rating_2: float, score: float) -> tuple[float, float]:
         expected_1 = self.__expected_score(rating_1, rating_2)
         expected_2 = self.__expected_score(rating_2, rating_1)
         return rating_1 + self.K * (score - expected_1), rating_2 + self.K * ((1 - score) - expected_2)
-
 
     @staticmethod
     def __remove_first_line(test_string: str) -> str:
         if test_string.startswith("Here") and test_string.split("\n")[0].strip().endswith(":"):
             return re.sub(r'^.*\n', '', test_string, count=1)
         return test_string
-
 
     @staticmethod
     def __expected_score(rating_l: float, rating_r: float) -> float:

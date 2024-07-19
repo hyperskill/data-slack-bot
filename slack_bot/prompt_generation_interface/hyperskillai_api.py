@@ -34,7 +34,7 @@ class HyperskillAIAPI:
 
         response = requests.post(self.__URL__, headers=headers, data=payload)
         response.raise_for_status()
-        return response.json()["content"][0]['text']
+        return response.json()["content"]
 
     @staticmethod
     def get_system_prompt_from_messages(
