@@ -113,6 +113,7 @@ jobs:
           --set slack.appToken=${{ secrets.SLACK_APP_TOKEN }} \
           --set slack.botToken=${{ secrets.SLACK_BOT_TOKEN }} \
           --set openai.oaiToken=${{ secrets.OPENAI_API_KEY }} \
+          --set hyperskillai.apiToken=${{ secrets.HYPERSKILLAI_API_TOKEN }} \
           --set youtrack.apiToken=${{ secrets.YT_API_TOKEN }} \
           --set clickhouse.host=${{ secrets.CLICKHOUSE_HOST }} \
           --set clickhouse.host_url=${{ secrets.CLICKHOUSE_HOST_URL }} \
