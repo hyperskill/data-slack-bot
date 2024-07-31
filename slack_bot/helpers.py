@@ -431,6 +431,9 @@ def generate_prompt(raw_request: str, model: str = "claude-3-5-sonnet-20240620")
     Raises:
         Exception: If there was an error executing the generated SQL query.
     """
+    if not HYPERSKILLAI_API_KEY:
+        return "Could not find HyperskillAI API key in the Environment"
+
     hyperskillai_api = HyperskillAIAPI(HYPERSKILLAI_API_KEY, model)
     generator = PromptsGenerator(ai_api=hyperskillai_api)
 
@@ -642,7 +645,7 @@ def make_ai_response(  # noqa: PLR0915
                 completion = client.chat.completions.create(
                     model=model, messages=messages  # type: ignore  # noqa: PGH003
                 )
-                response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003
+                response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003 E501
 
             logger.info("Dassy response: %s", response_text)
             app.client.chat_update(

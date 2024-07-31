@@ -37,7 +37,7 @@ class PromptsGenerator:
         self.__ai_api = ai_api
 
     def generate_optimal_prompt(
-        self, description: str, input_variables: list[dict[str, str]]
+        self, description: str, input_variables: list[str]
     ) -> str:
         """Generate the optimal prompt based on the given description and variables.
 
@@ -68,7 +68,7 @@ class PromptsGenerator:
     def __generate_test_cases(
         self,
         description: str,
-        input_variables: list[dict[str, str]],
+        input_variables: list[str],
         num_test_cases: int = 5,
     ) -> list[dict[str, Any]]:
         variable_descriptions = "\n".join(f"{var}" for var in input_variables)
@@ -101,7 +101,7 @@ class PromptsGenerator:
     def __generate_candidate_prompts(
         self,
         description: str,
-        input_variables: list[dict[str, str]],
+        input_variables: list[str],
         test_cases: list[dict[str, Any]],
         number_of_prompts: int,
     ) -> list[str]:
