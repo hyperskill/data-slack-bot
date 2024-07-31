@@ -18,11 +18,11 @@ from trafilatura.settings import use_config
 from slack_bot.assistant import Assistant, Phase
 from slack_bot.clickhouse import ClickHouse
 from slack_bot.db import DB
-from slack_bot.prompt_generation_interface.hyperskillai_api import HyperskillAIAPI
-from slack_bot.prompt_generation_interface.prompts_generator import PromptsGenerator
 from slack_bot.metric_watch_interface.constants import MENU, METRIC_WATCH_DB
 from slack_bot.metric_watch_interface.database import Metrics, Subscriptions
 from slack_bot.metric_watch_interface.subscription_manager import SubscriptionManager
+from slack_bot.prompt_generation_interface.hyperskillai_api import HyperskillAIAPI
+from slack_bot.prompt_generation_interface.prompts_generator import PromptsGenerator
 from slack_bot.youtrack import YouTrack
 
 load_dotenv()
@@ -75,6 +75,7 @@ PAY_URL = (
     "https://docs.google.com/document/d/11c5frOCNIJxTJ4zlJMNUeN3_xRbWEERNR1N9QPaRitk/"
     "edit#heading=h.kgvgpms6byh7"
 )
+
 
 def get_completion(prompt: str, model: str = BEST_MODEL) -> str:
     messages: list[ChatCompletionMessageParam] = [{"role": "user", "content": prompt}]
@@ -420,7 +421,8 @@ def generate_prompt(raw_request: str, model: str = "claude-3-5-sonnet-20240620")
     """Generates prompt based on the provided requirements and HyperskillAI model.
 
     Args:
-        raw_request (str): The required target to generate prompt for (may include variables we want to see in final prompt).
+        raw_request (str): The required target to generate prompt for
+        (may include variables_from_str we want to see in final prompt).
         model (str): The name of the HyperskillAI model to use for generating prompt.
 
     Returns:
@@ -432,27 +434,29 @@ def generate_prompt(raw_request: str, model: str = "claude-3-5-sonnet-20240620")
     hyperskillai_api = HyperskillAIAPI(HYPERSKILLAI_API_KEY, model)
     generator = PromptsGenerator(ai_api=hyperskillai_api)
 
-    def parse_string_with_variables(text):
-        var_pattern = r'\*+(\w+)'
-        variables = re.findall(var_pattern, text)
+    def parse_string_with_variables(text: str) -> tuple[str, list[str]]:
+        var_pattern = r"\*+(\w+)"
+        variables_from_str = re.findall(var_pattern, text)
         first_var_match = re.search(var_pattern, text)
 
         if first_var_match:
-            text_before = text[:first_var_match.start()].strip()
+            text_before = text[: first_var_match.start()].strip()
         else:
             text_before = text.strip()
 
-        return text_before, variables
+        return text_before, variables_from_str
 
     request, variables = parse_string_with_variables(raw_request)
 
     try:
-        optimal_prompt_for_request = generator.generate_optimal_prompt(request, variables)
+        optimal_prompt_for_request = generator.generate_optimal_prompt(
+            request, variables
+        )
     except Exception as e:  # noqa: BLE001
-        result = "Error: " + str(e).split('Stack trace:', maxsplit=1)[0]
+        result = "Error: " + str(e).split("Stack trace:", maxsplit=1)[0]
         print(result)  # noqa: T201
         return (
-            f"I am sorry, but I couldn't create a prompt for you 🙇. Encountered an error:\n"
+            f"I am sorry, but I couldn't create a prompt for you 🙇. Encountered an error:\n"  # noqa: E501
             f"```{result}```\n"
         )
 
@@ -507,7 +511,7 @@ def pay_scenario(last_msg: str, user_name: str) -> str:
     raise ValueError("Prompt for pay scenario is missing.")
 
 
-def make_ai_response(
+def make_ai_response(  # noqa: PLR0915
     app: App,
     body: dict[str, dict[str, str]],
     context: dict[str, str],
@@ -624,8 +628,10 @@ def make_ai_response(
                 )
             elif maybe_command == GENERATE_PROMPT_COMMAND:
                 response_text = generate_prompt(
-                    raw_request=last_msg_content.replace(GENERATE_PROMPT_COMMAND, "", 1).strip(),
-                    model=HYPERSKILLAI_MODEL
+                    raw_request=last_msg_content.replace(
+                        GENERATE_PROMPT_COMMAND, "", 1
+                    ).strip(),
+                    model=HYPERSKILLAI_MODEL,
                 )
             elif first_msg_content == METRIC_WATCH_COMMAND:
                 response_text = metric_watch_scenario(
@@ -636,7 +642,7 @@ def make_ai_response(
                 completion = client.chat.completions.create(
                     model=model, messages=messages  # type: ignore  # noqa: PGH003
                 )
-                response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003, E501
+                response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003
 
             logger.info("Dassy response: %s", response_text)
             app.client.chat_update(
