@@ -18,7 +18,14 @@ from trafilatura.settings import use_config
 from slack_bot.assistant import Assistant, Phase
 from slack_bot.clickhouse import ClickHouse
 from slack_bot.db import DB
-from slack_bot.metric_watch_interface.constants import MENU, METRIC_WATCH_DB
+from slack_bot.metric_watch_interface.airflow import AirflowAPIError, AirflowClient
+from slack_bot.metric_watch_interface.constants import (
+    AIRFLOW_URL,
+    DAG_ID,
+    MENU,
+    METRIC_WATCH__DOC,
+    METRIC_WATCH_DB,
+)
 from slack_bot.metric_watch_interface.database import Metrics, Subscriptions
 from slack_bot.metric_watch_interface.subscription_manager import SubscriptionManager
 from slack_bot.prompt_generation_interface.hyperskillai_api import HyperskillAIAPI
@@ -470,12 +477,43 @@ def generate_prompt(raw_request: str, model: str = "claude-3-5-sonnet-20240620")
     )
 
 
+def trigger_dag(conf: dict[str, Any]) -> str:
+    base_url = AIRFLOW_URL
+    user = os.environ.get("AIRFLOW_USER")
+    password = os.environ.get("AIRFLOW_PASSWORD")
+    auth = (user, password) if user and password else None
+    airflow_client = AirflowClient(base_url=base_url, auth=auth)
+
+    try:
+        response = airflow_client.trigger_dag(
+            dag_id=DAG_ID, conf=conf
+        )
+    except AirflowAPIError:
+        logging.exception("Failed to trigger DAG.")
+        return "Failed to trigger DAG."
+    else:
+        logging.info(response)
+        if "state" in response:
+            state = response["state"]
+            return f"You task state is: {state}"
+        return "Something goes wrong:\n" + str(response)
+
+
 def metric_watch_scenario(user: str, last_msg: str) -> str:
     """Handles the metric watch scenario based on the last message."""
     if last_msg == METRIC_WATCH_COMMAND:
         return MENU
     if last_msg == "2":
         return "Enter metric name:"
+    if last_msg == "3":
+        return METRIC_WATCH__DOC \
+            .replace("python ", "") \
+            .replace("main.py", "run") + "\n" + MENU
+    if last_msg.split()[0] == "run":
+        return trigger_dag({
+            "slack_user": user,
+            "args": last_msg.split()[1:],
+            })
 
     db = Database(
         db_name=METRIC_WATCH_DB,
