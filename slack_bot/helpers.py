@@ -479,6 +479,7 @@ def generate_prompt(raw_request: str, model: str = "claude-3-5-sonnet-20240620")
 
 
 def trigger_dag(conf: dict[str, Any]) -> str:
+    """Triggers a DAG in Airflow with the given configuration."""
     base_url = AIRFLOW_URL
     user = os.environ.get("AIRFLOW_USER")
     password = os.environ.get("AIRFLOW_PASSWORD")
@@ -540,6 +541,7 @@ def metric_watch_scenario(user: str, last_msg: str) -> str:
 
 
 def pay_scenario(last_msg: str, user_name: str) -> str:
+    """Handles the pay scenario based on the last message."""
     if last_msg == PAY_COMMAND:
         return PAY_GREETING
 
