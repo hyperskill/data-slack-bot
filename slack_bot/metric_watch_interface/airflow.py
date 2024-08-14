@@ -16,13 +16,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-
-
 class AirflowAPIError(Exception):
     """Custom exception for Airflow API errors."""
+
     def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(message)
+
 
 class AirflowClient:
     def __init__(self, base_url: str, auth: tuple[str, str] | None = None) -> None:
@@ -35,9 +35,8 @@ class AirflowClient:
         self.auth = auth
 
     def trigger_dag(
-            self, dag_id: str, run_id: str | None = None,
-            conf: dict[str, Any] | None = None
-        ) -> dict[str, Any]:
+        self, dag_id: str, run_id: str | None = None, conf: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Trigger a DAG run in Airflow.
 
         :param dag_id: The ID of the DAG to trigger.
@@ -86,9 +85,7 @@ if __name__ == "__main__":
 
     # Trigger a DAG
     try:
-        response = airflow_client.trigger_dag(
-            dag_id=DAG_ID, conf={"user": "UNCMCAQ12"}
-        )
+        response = airflow_client.trigger_dag(dag_id=DAG_ID, conf={"user": "UNCMCAQ12"})
         logging.info(response)
     except AirflowAPIError:
         logging.exception("Failed to trigger DAG.")

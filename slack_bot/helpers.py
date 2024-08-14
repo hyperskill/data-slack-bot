@@ -486,9 +486,7 @@ def trigger_dag(conf: dict[str, Any]) -> str:
     airflow_client = AirflowClient(base_url=base_url, auth=auth)
 
     try:
-        response = airflow_client.trigger_dag(
-            dag_id=DAG_ID, conf=conf
-        )
+        response = airflow_client.trigger_dag(dag_id=DAG_ID, conf=conf)
     except AirflowAPIError:
         logging.exception("Failed to trigger DAG.")
         return "Failed to trigger DAG."
@@ -507,14 +505,18 @@ def metric_watch_scenario(user: str, last_msg: str) -> str:
     if last_msg == "2":
         return "Enter metric name:"
     if last_msg == "3":
-        return METRIC_WATCH__DOC \
-            .replace("python ", "") \
-            .replace("main.py", "run") + "\n" + MENU
+        return (
+            METRIC_WATCH__DOC.replace("python ", "").replace("main.py", "run")
+            + "\n"
+            + MENU
+        )
     if last_msg.split()[0] == "run":
-        return trigger_dag({
-            "slack_user": user,
-            "args": last_msg.split()[1:],
-            })
+        return trigger_dag(
+            {
+                "slack_user": user,
+                "args": last_msg.split()[1:],
+            }
+        )
 
     db = Database(
         db_name=METRIC_WATCH_DB,

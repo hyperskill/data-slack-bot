@@ -42,4 +42,4 @@ Examples:
     python main.py --slice=Android  `: filter all metrics from the configuration that have the slice Android`
     python main.py  `: run the anomaly search for all metrics from the configuration`
 ```
-"""
+"""  # noqa: E501, RUF001
