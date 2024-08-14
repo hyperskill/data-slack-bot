@@ -13,7 +13,7 @@ Enter your choice:
 """
 METRIC_DOES_NOT_EXIST = "\nError: Metric '{metric}' does not exist."
 AIRFLOW_URL = "https://airflow.int.hyperskill.org/api/v1"
-DAG_ID = "metric_watch_custom"  # metric_watch_search
+DAG_ID = "metric_watch_custom"
 METRIC_WATCH__DOC = """
 ```
 Anomaly Detection CLI
