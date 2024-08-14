@@ -119,3 +119,5 @@ jobs:
           --set clickhouse.host_url=${{ secrets.CLICKHOUSE_HOST_URL }} \
           --set clickhouse.user=${{ secrets.CLICKHOUSE_USER }} \
           --set clickhouse.pass=${{ secrets.CLICKHOUSE_PASSWORD }}
+          --set airflow.user=${{ secrets.AIRFLOW_USER }}
+          --set airflow.password=${{ secrets.AIRFLOW_PASSWORD }}

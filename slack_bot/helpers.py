@@ -53,6 +53,7 @@ SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 HYPERSKILLAI_API_KEY = os.environ.get("HYPERSKILLAI_API_KEY")
 YT_API_TOKEN = os.environ.get("YT_API_TOKEN")
+CUSTOM_DAG_URL = os.environ.get("CUSTOM_DAG_URL")
 
 data = DB(Path(__file__).parent / "data")
 prompts = DB(Path(__file__).parent / "data" / "prompts")
@@ -495,8 +496,8 @@ def trigger_dag(conf: dict[str, Any]) -> str:
         logging.info(response)
         if "state" in response:
             state = response["state"]
-            return f"You task state is: {state}"
-        return "Something goes wrong:\n" + str(response)
+            return f"You task state is: {state} ({CUSTOM_DAG_URL})."
+        return f"Something goes wrong: {CUSTOM_DAG_URL}\n" + str(response)
 
 
 def metric_watch_scenario(user: str, last_msg: str) -> str:
