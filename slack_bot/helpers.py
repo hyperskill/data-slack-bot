@@ -333,7 +333,7 @@ def submit_issue(
     messages: list[ChatCompletionSystemMessageParam | str | list[dict[str, str]]],
     project_id: str,
     model: str,
-    slack_message_link: str, # TODO add to the function
+    slack_message_link: str,
 ) -> str:
     """Submits a YouTrack issue based on the given messages, project ID, and model.
 
@@ -366,9 +366,11 @@ def submit_issue(
         token=YT_API_TOKEN,
     )
 
+    slack_message_block = f"\n\n---\n\n* [Original Slack thread]({slack_message_link})"
+
     response_text = yt.create_issue(
         summary=arguments["summary"],
-        description=arguments["description"],
+        description=arguments["description"] + slack_message_block,
         project=project_id,
     )
 
