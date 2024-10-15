@@ -309,11 +309,31 @@ def process_conversation(
 
     return messages
 
+def build_slack_message_link(
+    channel_id: str,
+    thread_ts: str,
+    message_ts: str,
+) -> str:
+    """Builds a Slack message link based on the given channel ID and message timestamp.
+
+    Args:
+        channel_id (str): The ID of the Slack channel.
+        thread_ts (str): The timestamp of the Slack thread.
+        message_ts (str): The timestamp of the Slack message.
+
+    Returns:
+        str: The Slack message link.
+    """
+    return (
+        f"https://stepik.slack.com/archives/{channel_id}/"
+        f"p{message_ts.replace('.', '')}?thread_ts={thread_ts}&cid={channel_id}"
+    )
 
 def submit_issue(
     messages: list[ChatCompletionSystemMessageParam | str | list[dict[str, str]]],
     project_id: str,
     model: str,
+    slack_message_link: str, # TODO add to the function
 ) -> str:
     """Submits a YouTrack issue based on the given messages, project ID, and model.
 
@@ -323,6 +343,8 @@ def submit_issue(
         project_id (str): The ID of the YouTrack project to submit the issue to.
         model (str): The name of the OpenAI model to use for generating
         the issue summary and description.
+        slack_message_link (str): The link to the Slack message
+        that triggered the issue creation.
 
     Returns:
         str: The URL of the created YouTrack issue.
@@ -576,8 +598,15 @@ def make_ai_response(  # noqa: PLR0915
         None
     """
     channel_id = body["event"]["channel"]
-    thread_ts = body["event"].get("thread_ts", body["event"]["ts"])
+    message_ts = body["event"]["ts"]
+    thread_ts = body["event"].get("thread_ts", message_ts)
     bot_user_id = context["bot_user_id"]
+
+    slack_message_link = build_slack_message_link(
+        channel_id=channel_id,
+        thread_ts=thread_ts,
+        message_ts=message_ts,
+    )
 
     try:
         slack_resp = app.client.chat_postMessage(
@@ -637,6 +666,7 @@ def make_ai_response(  # noqa: PLR0915
                         messages=messages,  # type: ignore  # noqa: PGH003
                         project_id=project_id,
                         model=model,
+                        slack_message_link=slack_message_link,
                     )
                 app.client.chat_update(
                     channel=channel_id, ts=reply_message_ts, text=response_text
@@ -666,6 +696,7 @@ def make_ai_response(  # noqa: PLR0915
                     messages=messages,  # type: ignore  # noqa: PGH003
                     project_id=project_id,
                     model=model,
+                    slack_message_link=slack_message_link,
                 )
             elif maybe_command == SQL_COMMAND:
                 response_text = generate_sql(
@@ -688,7 +719,7 @@ def make_ai_response(  # noqa: PLR0915
                 completion = client.chat.completions.create(
                     model=model, messages=messages  # type: ignore  # noqa: PGH003
                 )
-                response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003 E501
+                response_text = completion.choices[0].message.content
 
             logger.info("Dassy response: %s", response_text)
             app.client.chat_update(
