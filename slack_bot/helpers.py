@@ -721,7 +721,7 @@ def make_ai_response(  # noqa: PLR0915
                 completion = client.chat.completions.create(
                     model=model, messages=messages  # type: ignore  # noqa: PGH003
                 )
-                response_text = completion.choices[0].message.content
+                response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003 E501
 
             logger.info("Dassy response: %s", response_text)
             app.client.chat_update(
