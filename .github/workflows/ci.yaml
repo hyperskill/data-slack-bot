@@ -5,6 +5,9 @@ on:
     paths-ignore:
       - "slackbot/tests/**"
       - "README.md"
+  pull_request:
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -68,6 +71,7 @@ jobs:
       - lint
       - type_checking
     runs-on: [self-hosted, small]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
