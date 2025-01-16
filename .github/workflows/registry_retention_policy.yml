@@ -1,7 +1,7 @@
 name: Registry Retention Policy
 on:
   schedule:
-    - cron: '0 4 * * *'
+    - cron: "0 4 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   remove-outdated-images:
-    runs-on: [ self-hosted, small ]
+    runs-on: arc-runners-small
     timeout-minutes: 120
     steps:
       - uses: hyperskill/azure-login@v3.0.0

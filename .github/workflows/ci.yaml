@@ -17,7 +17,7 @@ name: CI
 jobs:
   lint:
     name: Lint
-    runs-on: [self-hosted, small]
+    runs-on: arc-runners-small
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
 
   type_checking:
     name: Static type checking
-    runs-on: [ self-hosted, small ]
+    runs-on: arc-runners-small
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,7 +70,7 @@ jobs:
     needs:
       - lint
       - type_checking
-    runs-on: [self-hosted, small]
+    runs-on: arc-runners-small
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
