@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import traceback
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 
@@ -30,6 +31,7 @@ from slack_bot.metric_watch_interface.database import Metrics, Subscriptions
 from slack_bot.metric_watch_interface.subscription_manager import SubscriptionManager
 from slack_bot.prompt_generation_interface.hyperskillai_api import HyperskillAIAPI
 from slack_bot.prompt_generation_interface.prompts_generator import PromptsGenerator
+from slack_bot.pdp_assist.slack_extract_web import SlackExtractor
 from slack_bot.youtrack import YouTrack
 
 load_dotenv()
@@ -54,6 +56,9 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 HYPERSKILLAI_API_KEY = os.environ.get("HYPERSKILLAI_API_KEY")
 YT_API_TOKEN = os.environ.get("YT_API_TOKEN")
 CUSTOM_DAG_URL = os.environ.get("CUSTOM_DAG_URL")
+SLACK_EXTRACTOR_BASE_URL = os.environ.get("SLACK_EXTRACTOR_BASE_URL")
+SLACK_EXTRACTOR_API_PASSWORD = os.environ.get("SLACK_EXTRACTOR_API_PASSWORD")
+SLACK_EXTRACTOR_VERCEL_BYPASS_SECRET = os.environ.get("VERCEL_AUTOMATION_BYPASS_SECRET")
 
 data = DB(Path(__file__).parent / "data")
 prompts = DB(Path(__file__).parent / "data" / "prompts")
@@ -74,6 +79,7 @@ SQL_COMMAND = "sql"
 METRIC_WATCH_COMMAND = "mw"
 GENERATE_PROMPT_COMMAND = "prompt"
 PAY_COMMAND = "pay"
+SE_COMMAND = "se"
 PAY_GREETING = (
     "Please, describe what task you would like to set for the finance team "
     "in a free form."
@@ -309,6 +315,7 @@ def process_conversation(
 
     return messages
 
+
 def build_slack_message_link(
     channel_id: str,
     thread_ts: str,
@@ -328,6 +335,7 @@ def build_slack_message_link(
         f"https://stepik.slack.com/archives/{channel_id}/"
         f"p{message_ts.replace('.', '')}?thread_ts={thread_ts}&cid={channel_id}"
     )
+
 
 def submit_issue(
     messages: list[ChatCompletionSystemMessageParam | str | list[dict[str, str]]],
@@ -581,6 +589,89 @@ def pay_scenario(last_msg: str, user_name: str) -> str:
     raise ValueError("Prompt for pay scenario is missing.")
 
 
+def slack_extract_scenario(user_id: str, last_msg: str) -> dict[str, Any]:
+    """Handles the slack extract scenario based on the last message.
+
+    Args:
+        user_id (str): The ID of the user sending the message.
+        last_msg (str): The text of the last message.
+
+    Returns:
+        dict[str, Any]: A dictionary containing the response text and optionally file content for upload.
+    """
+    try:
+        # Initialize the SlackExtractor client
+        extractor = SlackExtractor(
+            base_url=SLACK_EXTRACTOR_BASE_URL,
+            api_password=SLACK_EXTRACTOR_API_PASSWORD,
+            vercel_bypass_secret=SLACK_EXTRACTOR_VERCEL_BYPASS_SECRET
+        )
+        
+        # Parse parameters from the message if provided, otherwise use defaults
+        parts = last_msg.strip().split()
+        
+        # Calculate default date range (last two weeks)
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=14)
+        
+        # Override with user-provided dates if available
+        if len(parts) > 1:
+            try:
+                start_date = datetime.strptime(parts[1], "%Y-%m-%d").date()
+            except ValueError:
+                return {"text": "Invalid start_date format. Please use YYYY-MM-DD format."}
+                
+        if len(parts) > 2:
+            try:
+                end_date = datetime.strptime(parts[2], "%Y-%m-%d").date()
+            except ValueError:
+                return {"text": "Invalid end_date format. Please use YYYY-MM-DD format."}
+        
+        # Ensure start_date is before end_date
+        if start_date > end_date:
+            return {"text": "Error: start_date must be before end_date."}
+            
+        # First API call: Download messages
+        download_response = extractor.download_messages(
+            user_id=user_id,
+            start_date=start_date,
+            end_date=end_date
+        )
+
+        # Get the job_id from the download response
+        job_id = download_response.job_id
+        
+        # Second API call: Extract messages using the job_id
+        extract_response = extractor.extract_messages(job_id=job_id)
+        
+        # Return the messages from the response
+        if extract_response.messages:
+            # Format the messages nicely
+            formatted_messages = json.dumps(extract_response.messages, indent=2, ensure_ascii=False)
+            
+            # Check if the formatted message is too long for a Slack message
+            if len(formatted_messages) > 3000:  # Slack message limit is around 4000, using 3000 to be safe
+                # Return both text and file content for upload
+                return {
+                    "text": f"Extracted {extract_response.extracted_message_count} messages from {start_date} to {end_date}. The data is too large to display directly, so I've attached it as a file.",
+                    "file_content": formatted_messages,
+                    "file_name": f"slack_extract_{start_date}_to_{end_date}.json",
+                    "file_type": "json"
+                }
+            else:
+                # Return just text for direct message
+                return {
+                    "text": f"Extracted {extract_response.extracted_message_count} messages from {start_date} to {end_date}:\n```\n{formatted_messages}\n```"
+                }
+        else:
+            return {
+                "text": f"Extraction successful. {extract_response.extracted_message_count} messages extracted from {start_date} to {end_date}. No messages content available in the response."
+            }
+            
+    except Exception as e:
+        return {"text": f"Error in slack extract scenario: {str(e)}"}
+
+
 def make_ai_response(  # noqa: PLR0915
     app: App,
     body: dict[str, dict[str, str]],
@@ -717,6 +808,27 @@ def make_ai_response(  # noqa: PLR0915
                     user=body["event"]["user"],
                     last_msg=last_msg_content,
                 )
+            elif maybe_command == SE_COMMAND:
+                response = slack_extract_scenario(
+                    user_id=body["event"]["user"],
+                    last_msg=last_msg_content,
+                )
+                
+                # Check if the response includes file content for upload
+                if isinstance(response, dict) and "file_content" in response:
+                    # Upload the file to Slack
+                    app.client.files_upload_v2(
+                        channel=channel_id,
+                        thread_ts=thread_ts,
+                        content=response["file_content"],
+                        filename=response["file_name"],
+                        filetype=response["file_type"],
+                        title=f"Slack Extract {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                    )
+                    response_text = response["text"]
+                else:
+                    # Use the text response directly
+                    response_text = response["text"] if isinstance(response, dict) else response
             else:
                 completion = client.chat.completions.create(
                     model=model, messages=messages  # type: ignore  # noqa: PGH003

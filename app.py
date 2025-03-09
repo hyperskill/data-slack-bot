@@ -31,6 +31,10 @@ def command_handler(body: dict[str, dict[str, str]], context: dict[str, str]) ->
         logger.exception("Found an error: %s", traceback.extract_stack)
 
 
-if __name__ == "__main__":
+def main():
     handler = SocketModeHandler(app, SLACK_APP_TOKEN)
     handler.start()  # type: ignore[no-untyped-call]
+
+
+if __name__ == "__main__":
+    main()
