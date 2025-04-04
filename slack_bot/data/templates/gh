@@ -1,0 +1,31 @@
+## Description
+
+[Provide a clear and concise description of the issue]
+
+## Steps to Reproduce
+
+1. [First step]
+2. [Second step]
+3. [And so on...]
+
+## Expected Behavior
+
+[Describe what you expected to happen]
+
+## Current Behavior
+
+[Describe what actually happens]
+
+## Environment
+
+- Repository: [Repository name]
+- Branch: [Branch name]
+- Version/Commit: [Version or commit hash]
+
+## Additional Context
+
+[Add any other context about the problem here, such as screenshots, logs, or related issues]
+
+## Proposed Solution (optional)
+
+[If you have suggestions on how to fix the issue, please describe them here]

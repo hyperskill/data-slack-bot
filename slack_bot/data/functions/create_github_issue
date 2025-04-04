@@ -1,0 +1,22 @@
+{
+    "name": "create_github_issue",
+    "description": "Creates a GitHub issue with filled template",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "summary": {
+                "type": "string",
+                "description": "Issue summary (come up with an issue title here, e.g. 'Bug: fix broken subscriptions chart')"
+            },
+            "description": {
+                "type": "string",
+                "description": "Issue description (pass filled ${template} here)"
+            },
+            "repository": {
+                "type": "string",
+                "description": "GitHub repository name to create the issue in (without the owner part)"
+            }
+        },
+        "required": ["summary", "description", "repository"]
+    }
+}

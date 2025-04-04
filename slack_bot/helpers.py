@@ -18,6 +18,7 @@ from trafilatura.settings import use_config
 from slack_bot.assistant import Assistant, Phase
 from slack_bot.clickhouse import ClickHouse
 from slack_bot.db import DB
+from slack_bot.github import GitHub
 from slack_bot.metric_watch_interface.airflow import AirflowAPIError, AirflowClient
 from slack_bot.metric_watch_interface.constants import (
     AIRFLOW_URL,
@@ -53,6 +54,7 @@ SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 HYPERSKILLAI_API_KEY = os.environ.get("HYPERSKILLAI_API_KEY")
 YT_API_TOKEN = os.environ.get("YT_API_TOKEN")
+GITHUB_API_TOKEN = os.environ.get("GITHUB_API_TOKEN")
 CUSTOM_DAG_URL = os.environ.get("CUSTOM_DAG_URL")
 
 data = DB(Path(__file__).parent / "data")
@@ -160,7 +162,7 @@ def num_tokens_from_messages(
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
-        print("Warning: model not found. Using cl100k_base encoding.")  # noqa: T201
+        print("Warning: model not found. Using cl100k_base encoding.")  
         encoding = tiktoken.get_encoding("cl100k_base")
 
     if model == "gpt-3.5-turbo":
@@ -266,7 +268,7 @@ def coock_prompt(prompt: Any[str, None], replacement: Any[str, None]) -> str:
     if prompt and replacement:
         return prompt.replace("{{template}}", replacement)
 
-    raise Exception("Prompt or replacement is missing.")  # noqa: TRY002
+    raise Exception("Prompt or replacement is missing.")  
 
 
 def process_conversation(
@@ -354,7 +356,7 @@ def submit_issue(
     func = json.loads(functions["create_issue"] or "{}")
     openai_response = client.chat.completions.create(
         model=model,
-        messages=messages,  # type: ignore  # noqa: PGH003
+        messages=messages,  
         functions=[func],
         function_call={"name": "create_issue"},
     )
@@ -380,6 +382,57 @@ def submit_issue(
         raise response_text
 
     return f"{YT_BASE_URL}/issue/{response_text['id']}"
+
+
+def submit_github_issue(
+    messages: list[ChatCompletionSystemMessageParam | str | list[dict[str, str]]],
+    repository: str,
+    model: str,
+    slack_message_link: str,
+) -> str:
+    """Submits a GitHub issue based on the given messages, repository name, and model.
+
+    Args:
+        messages (list[dict[str, str]]): The messages to use for generating
+        the issue summary and description.
+        repository (str): The name of the GitHub repository to submit the issue to.
+        model (str): The name of the OpenAI model to use for generating
+        the issue summary and description.
+        slack_message_link (str): The link to the Slack message
+        that triggered the issue creation.
+
+    Returns:
+        str: The URL of the created GitHub issue.
+    """
+    func = json.loads(functions["create_github_issue"] or "{}")
+    openai_response = client.chat.completions.create(
+        model=model,
+        messages=messages,  
+        functions=[func],
+        function_call={"name": "create_github_issue"},
+    )
+
+    arguments = json.loads(
+        openai_response.choices[0].message.function_call.arguments, strict=False
+    )
+
+    gh = GitHub(
+        base_url=GITHUB_BASE_URL,
+        token=GITHUB_API_TOKEN,
+    )
+
+    slack_message_block = f"\n\n---\n\n* [Original Slack thread]({slack_message_link})"
+
+    response_text = gh.create_issue(
+        summary=arguments["summary"],
+        description=arguments["description"] + slack_message_block,
+        repository=arguments.get("repository", repository),
+    )
+
+    if isinstance(response_text, Exception):
+        raise response_text
+
+    return f"{GITHUB_BASE_URL}{repository}/issues/{response_text['number']}"
 
 
 def generate_sql(problem: str, model: str) -> str:
@@ -424,20 +477,20 @@ def generate_sql(problem: str, model: str) -> str:
     phase.update_history("user", problem)
     completion = assistant.get_completion(
         model=model,
-        messages=phases["developing"].history,  # type: ignore  # noqa: PGH003
+        messages=phases["developing"].history,  
         functions=phase.functions,
         function_call={"name": "run_query"},
     )
     if isinstance(completion, str):
         phase.result = json.loads(completion, strict=False)["sql_query"]
     else:
-        phase.result = completion["sql_query"]  # type: ignore  # noqa: PGH003
+        phase.result = completion["sql_query"]  
 
     try:
         ch_client.execute(phase.result)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  
         result = "Error: " + str(e).split("Stack trace:")[0]
-        print(result)  # noqa: T201
+        print(result)  
         return (
             f"I am sorry, but I can't execute resulted query. Encountered an error:\n"
             f"```{result}```\n"
@@ -489,11 +542,11 @@ def generate_prompt(raw_request: str, model: str = "claude-3-5-sonnet-20240620")
         optimal_prompt_for_request = generator.generate_optimal_prompt(
             request, variables
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  
         result = "Error: " + str(e).split("Stack trace:", maxsplit=1)[0]
-        print(result)  # noqa: T201
+        print(result)  
         return (
-            f"I am sorry, but I couldn't create a prompt for you 🙇. Encountered an error:\n"  # noqa: E501
+            f"I am sorry, but I couldn't create a prompt for you . Encountered an error:\n"  
             f"```{result}```\n"
         )
 
@@ -583,7 +636,7 @@ def pay_scenario(last_msg: str, user_name: str) -> str:
     raise ValueError("Prompt for pay scenario is missing.")
 
 
-def make_ai_response(  # noqa: PLR0915
+def make_ai_response(  
     app: App,
     body: dict[str, dict[str, str]],
     context: dict[str, str],
@@ -631,7 +684,7 @@ def make_ai_response(  # noqa: PLR0915
         ]
 
         num_tokens = num_tokens_from_messages(messages)
-        # print(f"Number of tokens: {num_tokens}")  # noqa: ERA001
+        # print(f"Number of tokens: {num_tokens}")  
 
         if num_tokens > MAX_TOKENS * 0.95:
             app.client.chat_postMessage(
@@ -667,7 +720,7 @@ def make_ai_response(  # noqa: PLR0915
                         if project["shortName"].lower() == PAY_COMMAND.lower()
                     )["id"]
                     response_text = submit_issue(
-                        messages=messages,  # type: ignore  # noqa: PGH003
+                        messages=messages,  
                         project_id=project_id,
                         model=model,
                         slack_message_link=slack_message_link,
@@ -697,8 +750,25 @@ def make_ai_response(  # noqa: PLR0915
                     {"role": "system", "content": coock_prompt(system, template)}
                 )
                 response_text = submit_issue(
-                    messages=messages,  # type: ignore  # noqa: PGH003
+                    messages=messages,  
                     project_id=project_id,
+                    model=model,
+                    slack_message_link=slack_message_link,
+                )
+            elif maybe_command == GITHUB_COMMAND:
+                repository = last_msg_content.split(" ")[-1]
+                
+                template = (templates[repository] or templates[GITHUB_COMMAND] 
+                           or templates[YT_COMMAND])
+                messages.pop()  # remove GITHUB_COMMAND
+                system = prompts["clarification"]
+
+                messages.append(
+                    {"role": "system", "content": coock_prompt(system, template)}
+                )
+                response_text = submit_github_issue(
+                    messages=messages,  
+                    repository=repository,
                     model=model,
                     slack_message_link=slack_message_link,
                 )
@@ -721,16 +791,16 @@ def make_ai_response(  # noqa: PLR0915
                 )
             else:
                 completion = client.chat.completions.create(
-                    model=model, messages=messages  # type: ignore  # noqa: PGH003
+                    model=model, messages=messages  
                 )
-                response_text = completion.choices[0].message.content  # type: ignore  # noqa: PGH003 E501
+                response_text = completion.choices[0].message.content  
 
             logger.info("Dassy response: %s", response_text)
             app.client.chat_update(
                 channel=channel_id, ts=reply_message_ts, text=response_text
             )
-    except Exception as e:  # noqa: BLE001
-        print(f"Error: {e}")  # noqa: T201
+    except Exception as e:  
+        print(f"Error: {e}")  
         app.client.chat_postMessage(
             channel=channel_id,
             thread_ts=thread_ts,
@@ -749,5 +819,5 @@ def run_with_the_best_model(**kwargs) -> None:
     """
     try:
         make_ai_response(**kwargs)
-    except Exception:  # noqa: BLE001
+    except Exception:  
         make_ai_response(model=MODEL, **kwargs)
