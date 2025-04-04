@@ -71,6 +71,7 @@ projects_shortnames = [project["shortName"].lower() for project in projects]
 AN_COMMAND = "an"
 YT_COMMAND = "yt"
 SQL_COMMAND = "sql"
+GITHUB_COMMAND = "gh"
 METRIC_WATCH_COMMAND = "mw"
 GENERATE_PROMPT_COMMAND = "prompt"
 PAY_COMMAND = "pay"
@@ -79,6 +80,7 @@ PAY_GREETING = (
     "in a free form."
 )
 YT_BASE_URL = "https://vyahhi.myjetbrains.com/youtrack"
+GITHUB_BASE_URL = "https://github.com/hyperskill/"
 PAY_URL = (
     "https://docs.google.com/document/d/11c5frOCNIJxTJ4zlJMNUeN3_xRbWEERNR1N9QPaRitk/"
     "edit#heading=h.kgvgpms6byh7"
